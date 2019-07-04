@@ -34,7 +34,7 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
     # Dense layer
     dense = Dense(fr_vsize, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
-    decoder_pred = dense_time(decoder_concat_input)
+    decoder_pred = dense_time(decoder_concat_input) # ???
 
     # Full model
     full_model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_pred)
