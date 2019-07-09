@@ -1,23 +1,27 @@
 from keras.models import Sequential
-from keras.layers.core import Flatten, Dense, Dropout
+from keras.layers.core import  Dense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD
 from tensorflow.python.keras.layers import Input, GRU, Dense, Concatenate, TimeDistributed, Bidirectional
 from tensorflow.python.keras.models import Model
 from layers.attention import AttentionLayer
 from tensorflow.python.keras import backend as K
+import cv2,numpy as np
 
-import cv2
+from keras.applications.vgg16 import VGG16
 
-batch_size = 64
-hidden_size = 96
-en_timesteps, fr_timesteps = 20, 20
+
+def vgg_16():
+    model = VGG16(include_top=False,weights=None)
+    model.load_weights("model/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5")
+    model.layers.pop()
+    outputs = model.layers[-1].output
+    return outputs # 去掉VGG16的2个1x1卷积
 
 '''
 高度是32，vgg完后的channel
 
 '''
-
 def VGG_19(weights_path=None):
     model = Sequential()
     model.add(ZeroPadding2D((1,1),input_shape=(3,224,224)))
@@ -77,27 +81,31 @@ def VGG_19(weights_path=None):
 
 
 # 焊接vgg和lstm
-def vgg_gru(vgg_conv5, hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize):
+def vgg_gru(vgg_conv5):
     """ Defining a NMT model """
     # VGG的Conv5，然后按照宽度展开，把H中的数据concat到一起，是model，model的父类也是layer
-    # [batch,channel,height,width] => [batch,channel*height,width]
-    c = vgg_conv5.shape[1]
+    # input_shape = (img_width,img_height,channel)
+    # [batch,width,height,channel] => [batch,width,height*channel]
+    # [samples, time steps, features]
+    b = vgg_conv5.shape[0]
+    w = vgg_conv5.shape[1]
     h = vgg_conv5.shape[2]
-    w = vgg_conv5.shape[3]
-    v = c*h
-    rnn_input = K.reshape(vgg_conv5, (-1,v,w))
+    c = vgg_conv5.shape[3]
+    new_c = c*h
+    rnn_input = vgg_conv5.reshape((b,w,h*c)) # 转置
 
-    # Encoder GRU
-    encoder_gru = Bidirectional(GRU(hidden_size,
+    # 1.Encoder GRU编码器
+    encoder_gru = Bidirectional(GRU(64,#写死一个隐含神经元数量
                                     return_sequences=True,
                                     return_state=True,
                                     name='encoder_gru'),
                                 name='bidirectional_encoder')
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_gru(rnn_input)
 
-    # Set up the decoder GRU, using `encoder_states` as initial state.
-    decoder_inputs = Input(batch_shape=(batch_size, fr_timesteps - 1, fr_vsize), name='decoder_inputs')
-    decoder_gru = GRU(hidden_size*2, return_sequences=True, return_state=True, name='decoder_gru')
+    # 2.Decoder GRU,using `encoder_states` as initial state.
+    # 使用encoder的输出当做decoder的输入
+    decoder_inputs = Input(batch_shape=(b, 5 - 1, 64), name='decoder_inputs')
+    decoder_gru = GRU(64*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(
         decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state])
     )
@@ -106,11 +114,11 @@ def vgg_gru(vgg_conv5, hidden_size, batch_size, en_timesteps, en_vsize, fr_times
     attn_layer = AttentionLayer(name='attention_layer')
     attn_out, attn_states = attn_layer([encoder_out, decoder_out])
 
-    # Concat attention input and decoder GRU output
+    # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
 
     # Dense layer,
-    dense = Dense(fr_vsize, activation='softmax', name='softmax_layer')
+    dense = Dense(64, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
@@ -151,12 +159,18 @@ if __name__ == "__main__":
     im[:,:,0] -= 103.939
     im[:,:,1] -= 116.779
     im[:,:,2] -= 123.68
-    im = im.transpose((2,0,1))
+    im = im.transpose((2,0,1)) #转置，0,1,2=> 2,0,1，channel到了最前面
     im = np.expand_dims(im, axis=0)
 
-    # Test pretrained model
-    vgg = VGG_19('vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5')
-    full_model, infer_enc_model, infer_dec_model = vgg_gru(vgg,hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize)
+    # 先来了一个vgg，输出是conv5的:[batch,w=(W/8),h=(H/8),512]，权重是从pretrain中加载的
+    # vgg = VGG_19('vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5')
+    # vgg_output是去除了2个1x1伪全连接层的Conv5输出，我觉得是一个张量
+    vgg_output = vgg_16(im)
+
+    # 把vgg conv5，转化成[batch,time sequence, w],其实就是[batch, h*512, w]，w就是time sequence
+    full_model, infer_enc_model, infer_dec_model = vgg_gru(vgg_output)
+
+
     sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
     full_model.compile(optimizer=sgd, loss='categorical_crossentropy')
     out = model.predict(im)

@@ -2,7 +2,7 @@ from tensorflow.python.keras.layers import Input, GRU, Dense, Concatenate, TimeD
 from tensorflow.python.keras.models import Model
 from layers.attention import AttentionLayer
 
-
+#
 def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize):
     """ Defining a NMT model """
 
