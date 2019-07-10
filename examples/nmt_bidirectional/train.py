@@ -1,5 +1,4 @@
 import tensorflow.keras as keras
-
 from tensorflow.python.keras.utils import to_categorical
 import numpy as np
 import os, sys

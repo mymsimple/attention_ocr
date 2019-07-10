@@ -1,2 +1,4 @@
 .idea
-vgg/model
+__pycache__
+model
+data

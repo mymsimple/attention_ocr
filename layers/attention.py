@@ -82,6 +82,10 @@ class AttentionLayer(Layer):
 
             return e_i, [e_i]
 
+
+        # encoder_out_seq: 编码器的各个time sequence的输出h_i
+        # states: 解码器的状态
+        # inputs：解码器的输入，对于attention来说，就是和 alpha_i啊，我理解
         def context_step(inputs, states):
             """ Step function for computing ci using ei """
             # <= batch_size, hidden_size
@@ -103,11 +107,14 @@ class AttentionLayer(Layer):
 
         """ Computing energy outputs """
         # e_outputs => (batch_size, de_seq_len, en_seq_len)
+        # 计算每个e_i,这步是算e_i
         last_out, e_outputs, _ = K.rnn(
             energy_step, decoder_out_seq, [fake_state_e],
         )
 
         """ Computing context vectors """
+        # 得到编码器每步对应的e_i，就可以算alhpa_i，然后\Sum就可以求C_i(attenion向量)，然后带入到rnn中，算对应的解码了
+        # 这步是算c_i，C_t = Sum( Alpha_tj * Hj )
         last_out, c_outputs, _ = K.rnn(
             context_step, e_outputs, [fake_state_c],
         )
