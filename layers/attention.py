@@ -82,15 +82,21 @@ class AttentionLayer(Layer):
             return c_i, [c_i]
 
         def create_inital_state(inputs, hidden_size):
+            print("inputs",inputs)
+            print("hidden_size",hidden_size)
+            print("type(hidden_size)", type(hidden_size))
             # We are not using initial states, but need to pass something to K.rnn funciton
             fake_state = K.zeros_like(inputs)  # <= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
+            print(fake_state)
+            print("------")
+            print(tf.shape(fake_state))
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
 
-        fake_state_c = create_inital_state(encoder_out_seq, encoder_out_seq.shape[-1])
-        fake_state_e = create_inital_state(encoder_out_seq, encoder_out_seq.shape[1])  # <= (batch_size, enc_seq_len, latent_dim
+        fake_state_c = create_inital_state(encoder_out_seq, encoder_out_seq.shape[-1]) # 128
+        fake_state_e = create_inital_state(encoder_out_seq, encoder_out_seq.shape[1])  # <= (batch_size, enc_seq_len, latent_dim)
 
         # K.rnn(计算函数，输入x，初始状态）: K.rnn 这个函数，接受三个基本参数，其中第一个参数就是刚才写好的 step_do 函数，第二个参数则是输入的时间序列，第三个是初始态
         # 这个rnn就是解码器，输入 eji=a(s_i-1,hj)，其中j要遍历一遍，这个k.rnn就是把每个hj对应的eij都计算一遍

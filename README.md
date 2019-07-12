@@ -5,7 +5,8 @@
 但是，实际上我在他的基础上要添加OCR识别，参考的论文是
 《Robust Scene Text Recognition with Automatic Rectification（RARE）》中的SRE网络。
 
-
+跑原作者的例子：
+python -m examples.nmt_bidirectional.train
 
 ---
 

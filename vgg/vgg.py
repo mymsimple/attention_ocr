@@ -60,6 +60,8 @@ def vgg_gru(input_image,vgg_conv5):
 
     # Attention layer
     attn_layer = AttentionLayer(name='attention_layer')
+    print("encoder_out:",encoder_out)
+    print("decoder_out:", decoder_out)
     attn_out, attn_states = attn_layer([encoder_out, decoder_out])
 
     # concat Attention的输出 + GRU的输出
