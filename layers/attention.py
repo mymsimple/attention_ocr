@@ -3,6 +3,9 @@ import os
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
 
+def _p(t,name):
+    return tf.Print(t,[tf.shape(t)],name)
+
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
 class AttentionLayer(Layer):
     """
@@ -47,7 +50,7 @@ class AttentionLayer(Layer):
         #        按为什么还有个s，input+s，是因为batch。
         # states,我理解就是S_t-1
         def energy_step(inputs, states): # inputs(batch,dim)
-
+            inputs = _p(inputs,"energy_step:inputs")
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
             de_hidden = inputs.shape[-1]
 
@@ -66,7 +69,7 @@ class AttentionLayer(Layer):
 
             # softmax(e_tj)
             e_i = K.softmax(e_i)
-
+            e_i = _p(e_i,"energy_step:e_i")    
             return e_i, [e_i]
 
         # 这个step函数有意思，特别要关注他的入参：
@@ -78,20 +81,23 @@ class AttentionLayer(Layer):
         #   其中 step_in 是一个 (batch_size, input_dim) 的张量，
         #   代表当前时刻的样本 xt，而 states 是一个 list，代表 yt−1 及一些中间变量。"
         def context_step(inputs, states): # inputs (batch,dim)
-            c_i = K.sum(encoder_out_seq * K.expand_dims(inputs, -1), axis=1)
+            inputs = _p(inputs,"context_step:inputs")
+            states = _p(states,"context_step:states")
+            c_i = K.sum(encoder_output_sequence * K.expand_dims(inputs, -1), axis=1)
+            c_i = _p(c_i,"context_step:c_i")
             return c_i, [c_i]
 
         def create_inital_state(inputs, hidden_size):
-            print("inputs",inputs)
-            print("hidden_size",hidden_size)
-            print("type(hidden_size)", type(hidden_size))
+            # print("inputs",inputs)
+            # print("hidden_size",hidden_size)
+            # print("type(hidden_size)", type(hidden_size))
             # We are not using initial states, but need to pass something to K.rnn funciton
             fake_state = K.zeros_like(inputs)  # <= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
-            print(fake_state)
-            print("------")
-            print(tf.shape(fake_state))
+            # print(fake_state)
+            # print("------")
+            # print(tf.shape(fake_state))
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
 
@@ -101,14 +107,18 @@ class AttentionLayer(Layer):
         # K.rnn(计算函数，输入x，初始状态）: K.rnn 这个函数，接受三个基本参数，其中第一个参数就是刚才写好的 step_do 函数，第二个参数则是输入的时间序列，第三个是初始态
         # 这个rnn就是解码器，输入 eji=a(s_i-1,hj)，其中j要遍历一遍，这个k.rnn就是把每个hj对应的eij都计算一遍
         # 输出e_outputs，就是一个概率序列
+        fake_state_c = _p(fake_state_c,"fake_state_c")
+        fake_state_e = _p(fake_state_e,"fake_state_e")
         last_out, e_outputs, _ = K.rnn(
             energy_step, decoder_out_seq, [fake_state_e],
         )
+        e_outputs = _p(e_outputs,"e_outputs")
 
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
         last_out, c_outputs, _ = K.rnn( # K.rnn是构建了一个rnn网络，一步步的算，每步都调用
             context_step, e_outputs, [fake_state_c],
         )
+        c_outputs = _p(c_outputs,"c_outputs")
 
         return c_outputs, e_outputs
 

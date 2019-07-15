@@ -137,8 +137,8 @@ if __name__ == '__main__':
     """ Getting preprocessed data """
     en_seq, fr_seq = preprocess_data(en_tokenizer, fr_tokenizer, tr_en_text, tr_fr_text, en_timesteps, fr_timesteps)
 
-    en_vsize = max(en_tokenizer.index_word.keys()) + 1
-    fr_vsize = max(fr_tokenizer.index_word.keys()) + 1
+    en_vsize = en_tokenizer.num_words #max(en_tokenizer.index_word.keys()) + 1
+    fr_vsize = fr_tokenizer.num_words #max(fr_tokenizer.index_word.keys()) + 1
 
     """ Defining the full model """
     full_model, infer_enc_model, infer_dec_model = define_nmt(

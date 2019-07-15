@@ -1,6 +1,9 @@
 from tensorflow.python.keras.layers import Input, GRU, Dense, Concatenate, TimeDistributed, Bidirectional
 from tensorflow.python.keras.models import Model
 from layers.attention import AttentionLayer
+import tensorflow as tf
+def _p(t,name):
+    return tf.Print(t,[tf.shape(t)],name)
 
 #
 def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize):
@@ -16,17 +19,22 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
 
     # Encoder GRU
     encoder_gru = Bidirectional(GRU(hidden_size, return_sequences=True, return_state=True, name='encoder_gru'), name='bidirectional_encoder')
+    encoder_inputs = _p(encoder_inputs,"encoder_inputs")
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_gru(encoder_inputs)
+    encoder_out = _p(encoder_out,"encoder_out")
 
     # Set up the decoder GRU, using `encoder_states` as initial state.
     decoder_gru = GRU(hidden_size*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(
         decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state])
     )
+    decoder_inputs = _p(decoder_inputs,"decoder_inputs")
+    decoder_out = _p(decoder_out,"decoder_out")
 
     # Attention layer
     attn_layer = AttentionLayer(name='attention_layer')
     attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+    attn_out = _p(attn_out,"attn_out")
 
     # Concat attention input and decoder GRU output
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
@@ -34,8 +42,11 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
     # Dense layer
     dense = Dense(fr_vsize, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
-    decoder_pred = dense_time(decoder_concat_input) # ???
+    dense = _p(dense,"dense")
 
+    decoder_pred = dense_time(decoder_concat_input) # ???
+    decoder_pred = _p(decoder_pred,"decoder_pred")
+    
     # Full model
     full_model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_pred)
     full_model.compile(optimizer='adam', loss='categorical_crossentropy')

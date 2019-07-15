@@ -1,9 +1,0 @@
-2019-07-12 18:37:48,730 | examples.nmt_bidirectional.train | get_logger | INFO | Started log /Users/piginzoo/workspace/opensource/attention_ocr/logs/examples.nmt_bidirectional.train
-2019-07-12 18:42:07,794 | examples.nmt_bidirectional.train | get_logger | INFO | Started log /Users/piginzoo/workspace/opensource/attention_ocr/logs/examples.nmt_bidirectional.train
-2019-07-12 18:42:07,902 | examples.nmt_bidirectional.train | get_data | INFO | Length of text: 137860
-2019-07-12 18:42:08,139 | examples.nmt_bidirectional.train | get_data | INFO | Average length of an English sentence: 13.22084
-2019-07-12 18:42:08,272 | examples.nmt_bidirectional.train | get_data | INFO | Average length of a French sentence: 16.22397
-2019-07-12 18:42:17,335 | examples.nmt_bidirectional.train | preprocess_data | INFO | Vocabulary size (English): 201
-2019-07-12 18:42:17,337 | examples.nmt_bidirectional.train | preprocess_data | INFO | Vocabulary size (French): 345
-2019-07-12 18:42:17,337 | examples.nmt_bidirectional.train | preprocess_data | DEBUG | En text shape: (100000, 20)
-2019-07-12 18:42:17,337 | examples.nmt_bidirectional.train | preprocess_data | DEBUG | Fr text shape: (100000, 20)
