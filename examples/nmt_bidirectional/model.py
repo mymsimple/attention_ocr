@@ -26,15 +26,20 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
 
     # Attention layer
     attn_layer = AttentionLayer(name='attention_layer')
-    attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+    attn_out, attn_states = attn_layer([encoder_out,decoder_out])
 
     # Concat attention input and decoder GRU output
+    import tensorflow as tf
+    print("decoder_out:",tf.shape("decoder_out"))
+    print("attn_out:", tf.shape("attn_out"))
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
 
     # Dense layer
     dense = Dense(fr_vsize, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
+    print("decoder_concat_input:", tf.shape("decoder_concat_input"))
     decoder_pred = dense_time(decoder_concat_input) # ???
+    print("decoder_concat_input:", tf.shape("decoder_concat_input"))
 
     # Full model
     full_model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_pred)

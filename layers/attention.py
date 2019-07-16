@@ -81,6 +81,8 @@ class AttentionLayer(Layer):
             c_i = K.sum(encoder_out_seq * K.expand_dims(inputs, -1), axis=1)
             return c_i, [c_i]
 
+        # (batch_size, enc_seq_len, latent_dim)
+        # => (batch_size, hidden_size)
         def create_inital_state(inputs, hidden_size):
             print("inputs",inputs)
             print("hidden_size",hidden_size)
@@ -95,18 +97,21 @@ class AttentionLayer(Layer):
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
 
+        # encoder_out_seq = (batch_size, enc_seq_len, latent_dim)
+        # fake_state_c ==   (batch_size, latent_dim)
+        # fake_state_e ==   (batch_size, enc_seq) , 最后这个维度不好理解，其实就是attention模型里面的decoder对应的每个步骤的attention这个序列，是一个值
         fake_state_c = create_inital_state(encoder_out_seq, encoder_out_seq.shape[-1]) # 128
-        fake_state_e = create_inital_state(encoder_out_seq, encoder_out_seq.shape[1])  # <= (batch_size, enc_seq_len, latent_dim)
+        fake_state_e = create_inital_state(encoder_out_seq, encoder_out_seq.shape[1])  # fake_state_e (batch,enc_seq_len)
 
         # K.rnn(计算函数，输入x，初始状态）: K.rnn 这个函数，接受三个基本参数，其中第一个参数就是刚才写好的 step_do 函数，第二个参数则是输入的时间序列，第三个是初始态
         # 这个rnn就是解码器，输入 eji=a(s_i-1,hj)，其中j要遍历一遍，这个k.rnn就是把每个hj对应的eij都计算一遍
         # 输出e_outputs，就是一个概率序列
-        last_out, e_outputs, _ = K.rnn(
+        last_out, e_outputs, _ = K.rnn( # decoder_out_seq =>()
             energy_step, decoder_out_seq, [fake_state_e],
         )
 
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
-        last_out, c_outputs, _ = K.rnn( # K.rnn是构建了一个rnn网络，一步步的算，每步都调用
+        last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
             context_step, e_outputs, [fake_state_c],
         )
 

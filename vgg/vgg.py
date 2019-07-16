@@ -38,6 +38,7 @@ def vgg_gru(input_image,vgg_conv5):
     w = vgg_conv5_shape[1]
     h = vgg_conv5_shape[2]
     c = vgg_conv5_shape[3]
+    print("(b,w,c*h)",(b,w,c*h))
     rnn_input = tf.reshape(vgg_conv5,(b,w,c*h)) # 转置[batch,width,height,channel] => [batch,width,height*channel]
     # print(tf.shape(rnn_input))
     # print(rnn_input)

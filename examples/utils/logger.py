@@ -15,7 +15,7 @@ def get_logger(mod_name, log_dir):
             config["handlers"]["file"]["filename"] = os.path.join(log_dir, mod_name+'.log')
             logging.config.dictConfig(config)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
     logger = logging.getLogger(mod_name)
     logger.info("Started log {}".format(os.path.join(log_dir, mod_name)))
