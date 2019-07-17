@@ -15,9 +15,9 @@ from examples.utils.logger import get_logger
 base_dir = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-3])
 logger = get_logger("examples.nmt_bidirectional.train", os.path.join(base_dir, 'logs'))
 
-batch_size = 64
-hidden_size = 96
-en_timesteps, fr_timesteps = 20, 20
+batch_size = 1
+hidden_size = 10
+en_timesteps, fr_timesteps = 5, 15
 
 
 def get_data(train_size, random_seed=100):
@@ -67,7 +67,7 @@ def train(full_model, en_seq, fr_seq, batch_size, n_epochs=10):
     for ep in range(n_epochs):
         losses = []
         for bi in range(0, en_seq.shape[0] - batch_size, batch_size):
-
+            print("==================================================")
             en_onehot_seq = to_categorical(en_seq[bi:bi + batch_size, :], num_classes=en_vsize)
             fr_onehot_seq = to_categorical(fr_seq[bi:bi + batch_size, :], num_classes=fr_vsize)
 
@@ -127,6 +127,7 @@ if __name__ == '__main__':
     filename = ''
     tr_en_text, tr_fr_text, ts_en_text, ts_fr_text = get_data(train_size=train_size)
 
+    print(tr_en_text, tr_fr_text)
     """ Defining tokenizers """
     en_tokenizer = keras.preprocessing.text.Tokenizer(oov_token='UNK')
     en_tokenizer.fit_on_texts(tr_en_text)
@@ -146,7 +147,7 @@ if __name__ == '__main__':
         en_timesteps=en_timesteps, fr_timesteps=fr_timesteps,
         en_vsize=en_vsize, fr_vsize=fr_vsize)
 
-    n_epochs = 10 if not debug else 3
+    n_epochs = 1
     train(full_model, en_seq, fr_seq, batch_size, n_epochs)
 
     """ Save model """
@@ -159,19 +160,20 @@ if __name__ == '__main__':
     fr_index2word = dict(zip(fr_tokenizer.word_index.values(), fr_tokenizer.word_index.keys()))
 
     """ Inferring with trained model """
-
-    np.random.seed(100)
-    rand_test_ids = np.random.randint(0, len(ts_en_text), size=10)
-    for rid in rand_test_ids:
-        test_en = ts_en_text[rid]
-        logger.info('\nTranslating: {}'.format(test_en))
-
-        test_en_seq = sents2sequences(en_tokenizer, [test_en], pad_length=en_timesteps)
-        test_fr, attn_weights = infer_nmt(
-            encoder_model=infer_enc_model, decoder_model=infer_dec_model,
-            test_en_seq=test_en_seq, en_vsize=en_vsize, fr_vsize=fr_vsize)
-        logger.info('\tFrench: {}'.format(test_fr))
-
-        """ Attention plotting """
-        plot_attention_weights(test_en_seq, attn_weights, en_index2word, fr_index2word,
-                               base_dir=base_dir, filename='attention_{}.png'.format(rid))
+    #
+    # np.random.seed(100)
+    # print(len(ts_en_text))
+    # rand_test_ids = np.random.randint(0, len(ts_en_text), size=10)
+    # for rid in rand_test_ids:
+    #     test_en = ts_en_text[rid]
+    #     logger.info('\nTranslating: {}'.format(test_en))
+    #
+    #     test_en_seq = sents2sequences(en_tokenizer, [test_en], pad_length=en_timesteps)
+    #     test_fr, attn_weights = infer_nmt(
+    #         encoder_model=infer_enc_model, decoder_model=infer_dec_model,
+    #         test_en_seq=test_en_seq, en_vsize=en_vsize, fr_vsize=fr_vsize)
+    #     logger.info('\tFrench: {}'.format(test_fr))
+    #
+    #     """ Attention plotting """
+    #     plot_attention_weights(test_en_seq, attn_weights, en_index2word, fr_index2word,
+    #                            base_dir=base_dir, filename='attention_{}.png'.format(rid))

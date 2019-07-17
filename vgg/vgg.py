@@ -1,6 +1,7 @@
 from keras.models import Model
 from keras.optimizers import SGD
 from keras.layers import Input, GRU, Dense, Concatenate, TimeDistributed, Bidirectional
+from keras.layers.wrappers import Bidirectional
 from layers.attention import AttentionLayer
 from tensorflow.python.keras.utils import to_categorical
 import cv2,numpy as np
@@ -50,6 +51,7 @@ def vgg_gru(input_image,vgg_conv5):
                                 name='bidirectional_encoder')
 
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_gru(rnn_input)
+
 
     # 2.Decoder GRU,using `encoder_states` as initial state.
     # 使用encoder的输出当做decoder的输入
