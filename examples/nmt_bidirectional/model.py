@@ -19,9 +19,9 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
         decoder_inputs = Input(shape=(fr_timesteps - 1, fr_vsize), name='decoder_inputs')
 
     # Encoder GRU
-    encoder_gru = Bidirectional(GRU(hidden_size, return_sequences=True, return_state=True, name='encoder_gru'), name='bidirectional_encoder')
+    encoder_bi_gru = Bidirectional(GRU(hidden_size, return_sequences=True, return_state=True, name='encoder_gru'), name='bidirectional_encoder')
     # encoder_inputs = _p(encoder_inputs,"encoder_inputs")
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_gru(encoder_inputs)
+    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(encoder_inputs)
     # encoder_out = _p(encoder_out,"encoder_out")
 
     # Set up the decoder GRU, using `encoder_states` as initial state.

@@ -3,6 +3,7 @@ from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
 
 def _p(t,name):
+    print("调试计算图定义："+name, t)
     return tf.Print(t,[tf.shape(t)],name)
 
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
@@ -14,6 +15,11 @@ class AttentionLayer(Layer):
 
     def __init__(self, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
+
+
+    # def __call__(self, inputs, initial_state=None, constants=None, **kwargs):
+    #     if initial_state is None and constants is None:
+    #         return super(AttentionLayer, self).__call__(inputs, **kwargs)
 
     def build(self, input_shape):
         assert isinstance(input_shape, list)
@@ -39,6 +45,7 @@ class AttentionLayer(Layer):
         inputs: [encoder_output_sequence, decoder_output_sequence]
         """
         assert type(inputs) == list
+        # 注意，encoder_out_seq是一个数组，长度是seq；decoder_out_seq是一个输出。
         encoder_out_seq, decoder_out_seq = inputs
 
         encoder_out_seq = _p(encoder_out_seq, "编码器隐含层输出")
@@ -52,7 +59,6 @@ class AttentionLayer(Layer):
 
 
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
-            en_seq_len = 10
             print("en_seq_len, en_hidden:",en_seq_len, en_hidden)
             de_hidden = inputs.shape[-1]
 
@@ -84,8 +90,8 @@ class AttentionLayer(Layer):
         #   其中 step_in 是一个 (batch_size, input_dim) 的张量，
         #   代表当前时刻的样本 xt，而 states 是一个 list，代表 yt−1 及一些中间变量。"
         def context_step(inputs, states): # inputs (batch,dim)
-            # inputs = _p(inputs,"context_step:inputs")
-            # states = _p(states,"context_step:states")
+            inputs = _p(inputs,"context_step:inputs")
+            states = _p(states,"context_step:states")
             c_i = K.sum(encoder_out_seq * K.expand_dims(inputs, -1), axis=1)
             c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")
             return c_i, [c_i]
@@ -117,16 +123,19 @@ class AttentionLayer(Layer):
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
         shape = encoder_out_seq.shape.as_list()
         print("encoder_out_seq.shape:",shape)
-        fake_state_e = create_inital_state(encoder_out_seq,10)#shape[1])#encoder_out_seq.shape[1])  # fake_state_e (batch,enc_seq_len)
+        fake_state_e = create_inital_state(encoder_out_seq,shape[1])#encoder_out_seq.shape[1])  # fake_state_e (batch,enc_seq_len)
         fake_state_e = _p(fake_state_e, "fake_state_e")
         last_out, e_outputs, _ = K.rnn(
             energy_step, decoder_out_seq, [fake_state_e],
         )
+
+
         e_outputs = _p(e_outputs,"能量函数e输出：：：：")
 
 
         fake_state_c = create_inital_state(encoder_out_seq, encoder_out_seq.shape[-1])  #
         fake_state_c = _p(fake_state_c, "fake_state_c")
+        print("e_outputs:", e_outputs)
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
             context_step, e_outputs, [fake_state_c],
         )

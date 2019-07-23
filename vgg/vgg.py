@@ -1,22 +1,35 @@
-from keras.models import Model
-from keras.optimizers import SGD
-from keras.layers import Input, GRU, Dense, Concatenate, TimeDistributed, Bidirectional
-from keras.layers.wrappers import Bidirectional
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.optimizers import Adam
 from layers.attention import AttentionLayer
 from tensorflow.python.keras.utils import to_categorical
 import cv2,numpy as np
-import tensorflow as tf
-from keras.applications.vgg19 import VGG19
+
+# 之前报错：AttributeError: 'Bidirectional' object has no attribute 'outbound_nodes'
+# from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,Reshape
+# from tensorflow.python.keras.applications.vgg19 import VGG19
+# from keras.applications.vgg19 import VGG19
+# 原因是不能用keras自带的vgg19+keras自带的bidirectional，靠，肯定是版本不兼容的问题
+# 切换到下面的就好了，之前还是试验了用tf的bidirectional+keras的vgg19，也是不行，报错：AttributeError: 'Node' object has no attribute 'output_masks'
+# 靠谱的组合是：tf的bidirectional+tf的vgg19
+from tensorflow.python.keras.applications.vgg19 import VGG19
+from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,Reshape
 
 
 def vgg_19():
     input_image = Input(shape=(224,224,3), name='input_image')
-    model = VGG19(input_tensor=input_image,include_top=False,weights=None)
+    model = VGG19(include_top=False,weights=None,input_tensor=input_image)
     model.load_weights("model/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5")
-    model.layers.pop()
-    conv5_layer = model.layers[-1]
-    outputs = conv5_layer.output #<----看！是output，输出，输出的是一个tensor
-    print(outputs)
+    # input_image = model.input
+    #model.layers.pop()
+    # model.layers[-1].outbound_nodes = []
+    #conv5_layer = model.layers[-1]
+    #outputs = conv5_layer.output #<----看！是output，输出，输出的是一个tensor
+
+    conv5_layer = model.get_layer("block5_pool")
+    print(conv5_layer)
+    outputs = conv5_layer.output  # <----看！是output，输出，输出的是一个tensor
+
+    print("vgg_conv5_layer",outputs)
     return input_image,outputs # 去掉VGG16的2个1x1卷积，返回的是一个张量，VGG16是一个Model（也就是Functional）的模型，不是Sequential的
 
 
@@ -24,6 +37,8 @@ def vgg_19():
 
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def vgg_gru(input_image,vgg_conv5):
+
+
     """ Defining a NMT model """
     # VGG的Conv5，然后按照宽度展开，把H中的数据concat到一起，是model，model的父类也是layer
     # input_shape = (img_width,img_height,channel)
@@ -40,9 +55,17 @@ def vgg_gru(input_image,vgg_conv5):
     h = vgg_conv5_shape[2]
     c = vgg_conv5_shape[3]
     print("(b,w,c*h)",(b,w,c*h))
-    rnn_input = tf.reshape(vgg_conv5,(b,w,c*h)) # 转置[batch,width,height,channel] => [batch,width,height*channel]
+    # rnn_input = tf.reshape(vgg_conv5,(b,w,c*h)) # 转置[batch,width,height,channel] => [batch,width,height*channel]
     # print(tf.shape(rnn_input))
-    # print(rnn_input)
+
+
+    # VGG的Conv5，然后按照宽度展开，把H中的数据concat到一起，是model，model的父类也是layer
+    rnn_input = Reshape((w,c*h))(vgg_conv5)
+    print("rnn_input.shape=", rnn_input)
+
+    # time_distribute = TimeDistributed(Lambda(lambda x: model_cnn(x)))(
+    #     input_lay)  # keras.layers.Lambda is essential to make our trick work :)
+
     # 1.Encoder GRU编码器
     encoder_gru = Bidirectional(GRU(64,#写死一个隐含神经元数量
                                     return_sequences=True,
@@ -52,10 +75,9 @@ def vgg_gru(input_image,vgg_conv5):
 
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_gru(rnn_input)
 
-
     # 2.Decoder GRU,using `encoder_states` as initial state.
     # 使用encoder的输出当做decoder的输入
-    decoder_inputs = Input(shape=(5 - 1, 64), name='decoder_inputs')
+    decoder_inputs = Input(shape=(5,64), name='decoder_inputs')
     decoder_gru = GRU(64*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(
         decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state])
@@ -65,6 +87,7 @@ def vgg_gru(input_image,vgg_conv5):
     attn_layer = AttentionLayer(name='attention_layer')
     print("encoder_out:",encoder_out)
     print("decoder_out:", decoder_out)
+
     attn_out, attn_states = attn_layer([encoder_out, decoder_out])
 
     # concat Attention的输出 + GRU的输出
@@ -116,6 +139,5 @@ if __name__ == "__main__":
     # 把vgg conv5，转化成[batch,time sequence, w],其实就是[batch, h*512, w]，w就是time sequence
     model = vgg_gru(input_image,vgg_output)
 
-    sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy')
-    train(model,im,np.array(["12345"]))
+    model.compile(optimizer=Adam(), loss='categorical_crossentropy')
+    train(model,im,np.array(["12345"]),1)
