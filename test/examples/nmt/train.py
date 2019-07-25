@@ -8,10 +8,10 @@ project_path = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-3
 if project_path not in sys.path:
     sys.path.append(project_path)
 
-from examples.utils.data_helper import read_data, sents2sequences
-from examples.nmt.model import define_nmt
-from examples.utils.model_helper import plot_attention_weights
-from examples.utils.logger import get_logger
+from test.examples import read_data, sents2sequences
+from test.examples import define_nmt
+from test.examples.utils.model_helper import plot_attention_weights
+from test.examples import get_logger
 
 base_dir = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-3])
 logger = get_logger("examples.nmt.train",os.path.join(base_dir, 'logs'))

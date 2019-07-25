@@ -106,9 +106,9 @@ class AttentionLayer(Layer):
             fake_state = K.zeros_like(inputs)  # <= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
-            # print(fake_state)
-            # print("------")
-            # print(tf.shape(fake_state))
+            print(fake_state)
+            print("------")
+            print(tf.shape(fake_state))
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
 
