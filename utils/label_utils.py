@@ -4,9 +4,11 @@ import re
 import os
 from Levenshtein import *
 import logging
-from utils import image_utils
+from keras.utils import np_utils
 
 logger = logging.getLogger("Data_Util")
+
+MAX_SEQUENCE = 20
 
 def caculate_edit_distance(preds , labels):
     distances = [distance(p,l) for p,l in zip(preds,labels)]
@@ -28,10 +30,15 @@ def get_charset(charset_file):
     charset = [ch.strip("\n") for ch in charset]
     charset = "".join(charset)
     charset = list(charset)
-    if charset[-1]!=" ":
-        charset.append(" ")
+    if charset[0]!=" ": charset.insert(0," ") # 0位置特殊字符，空格，用于做padding用
     return charset
-
+# # 加载字符集，charset.txt，最后一个是空格
+# def get_charset(charset_file):
+#     charset = open(charset_file, 'r', encoding='utf-8').readlines()
+#     charset = [ch.strip("\n") for ch in charset]
+#     charset = "".join(charset)
+#     charset = list(charset)
+#     return charset
 
 def get_file_list(dir):
     from os import listdir
@@ -61,13 +68,21 @@ def read_labeled_image_list(label_file_name,charsets):
             logger.error("解析标签字符串失败，忽略此样本：[%s]", label)
             continue
 
-        label_index = convert_label_to_id(processed_label, charsets)
-        if label_index is None: continue
+        length = len(processed_label)
+        padding_length = MAX_SEQUENCE - length
+        processed_label += " " * padding_length
+
+        labels_index = convert_labels_to_ids(processed_label, charsets)
+        if labels_index is None:
+            continue
+
+        labels_index = np.vstack(labels_index) # 因为是返回的是数组，所以要变成nparray，从list[(3700)]=>(sequence,3700)
+        if labels_index is None: continue
 
         filenames.append(filename)
-        labels.append(label_index)
+        #print("!!!!!!######, labels_index.shape",labels_index.shape)
+        labels.append(labels_index)
 
-    logger.info("样本标签数量[%d],样本图像数量[%d]",len(labels),len(filenames))
     f.close()
     return filenames, labels
 
@@ -86,14 +101,6 @@ def convert_to_id(labels,characters):
 
 rex = re.compile(' ')
 logger = logging.getLogger("TextUitil")
-
-# 加载字符集，charset.txt，最后一个是空格
-def get_charset(charset_file):
-    charset = open(charset_file, 'r', encoding='utf-8').readlines()
-    charset = [ch.strip("\n") for ch in charset]
-    charset = "".join(charset)
-    charset = list(charset)
-    return charset
 
 
 def process_unknown_charactors_all(all_sentence, dict,replace_char=None):
@@ -143,12 +150,13 @@ def process_unknown_charactors(sentence, dict,replace_char=None):
     return result
 
 
-# 将label转换为数字表示
-def convert_label_to_id(label, charsets):
-    label_index = []
+# 将labels转换为one_hot, "我爱北京"=> [(0,0,0,......,0,1,0,.....0,0),(0,0,0,......,0,1,0,.....0,0),..]维度是词表维度
+def convert_labels_to_ids(label, charsets):
+    labels_index = []
     for l in label:
         if not l in charsets:
             logger.error("字符串[%s]中的字符[%s]未在词表中",label,l)
             return None
-        label_index.append(charsets.index(l))
-    return label_index
+        one_hot = np_utils.to_categorical(charsets.index(l), len(charsets))
+        labels_index.append(one_hot)
+    return labels_index

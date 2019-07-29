@@ -2,6 +2,10 @@ from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import MaxPooling2D
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.backend import squeeze
+from tensorflow.python.keras.layers import Lambda
+
+def squeeze_wrapper(tensor):
+    return squeeze(tensor, axis=1)
 
 '''
     #抽feature，用的cnn网络
@@ -48,6 +52,7 @@ from tensorflow.python.keras.backend import squeeze
 '''
 # 自定义的卷基层，32x100 => 1 x 25，即（1/32，1/4)
 def conv_layer(img_input):
+
     # Block 1
     x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(img_input)
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
@@ -70,12 +75,12 @@ def conv_layer(img_input):
     # Block 6
     x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block6_conv1')(x)
     x = BatchNormalization()(x)
-    x = MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')(x) # <------ pool kernel is (2,1)!!!!!
+    x = MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')(x) # <------ pool kernel is (2,1)!!!!!
 
     # Block 7
     x = Conv2D(512, (2, 2), strides=[2, 1], activation='relu', padding='same', name='block7_conv1')(x)
 
-    return squeeze(x,axis=1)
+    return Lambda(squeeze_wrapper)(x)
 
 
 # conv1 = self.__conv_stage(inputdata=inputdata, out_dims=64, name='conv1')  # batch*16*50*64

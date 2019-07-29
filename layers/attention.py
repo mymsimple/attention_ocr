@@ -54,13 +54,16 @@ class AttentionLayer(Layer):
         # inputs,我理解就是所有的h_j，错！我之前理解错了，这个参数是指某个时刻t，对应的输入！不是所有，是某个时刻的输入。
         #        按为什么还有个s，input+s，是因为batch。
         # states,我理解就是S_t-1
-        def energy_step(inputs, states): # inputs(batch,dim)
-            inputs = _p(inputs,"energy_step:inputs 算能量函数了..........") #inputs：[1，20]
+        # decode_outs是不包含seq的，不是一个decode_out_seq，而是decode_out，为何加s呢，是因为batch
+        # 但是每一步都是encoder_out_seq全都参与运算的，
+        # decoder_out一个和encoder_out_seq一串，对
+        def energy_step(decode_outs, states): # decode_outs(batch,dim)
+            decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
 
 
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
             print("en_seq_len, en_hidden:",en_seq_len, en_hidden)
-            de_hidden = inputs.shape[-1]
+            de_hidden = decode_outs.shape[-1]
 
             #  W * h_j
             reshaped_enc_outputs = K.reshape(encoder_out_seq, (-1, en_hidden))
@@ -68,7 +71,7 @@ class AttentionLayer(Layer):
             W_a_dot_s = K.reshape(K.dot(reshaped_enc_outputs, self.W_a), (-1, en_seq_len, en_hidden))
 
             # U * S_t - 1
-            U_a_dot_h = K.expand_dims(K.dot(inputs, self.U_a), 1)  # <= batch_size, 1, latent_dim
+            U_a_dot_h = K.expand_dims(K.dot(decode_outs, self.U_a), 1)  # <= batch_size, 1, latent_dim
 
             # tanh ( W * h_j + U * S_t-1 + b )
             reshaped_Ws_plus_Uh = K.tanh(K.reshape(W_a_dot_s + U_a_dot_h, (-1, en_hidden)))
@@ -89,15 +92,16 @@ class AttentionLayer(Layer):
         # "step_do 这个函数，这个函数接受两个输入：step_in 和 states。
         #   其中 step_in 是一个 (batch_size, input_dim) 的张量，
         #   代表当前时刻的样本 xt，而 states 是一个 list，代表 yt−1 及一些中间变量。"
-        def context_step(inputs, states): # inputs (batch,dim)
-            inputs = _p(inputs,"context_step:inputs")
+        def context_step(e, states): # e (batch,dim),其实每个输入就是一个e
+            e = _p(e,"context_step:e")
             states = _p(states,"context_step:states")
-            c_i = K.sum(encoder_out_seq * K.expand_dims(inputs, -1), axis=1)
+            c_i = K.sum(encoder_out_seq * K.expand_dims(e, -1), axis=1)
             c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")
             return c_i, [c_i]
 
-        # (batch_size, enc_seq_len, latent_dim)
+        #    (batch_size, enc_seq_len, latent_dim)
         # => (batch_size, hidden_size)
+        # 这个函数是，作为GRU的初始状态值，
         def create_inital_state(inputs, hidden_size):
             # print("inputs",inputs)
             # print("hidden_size",hidden_size)
@@ -109,6 +113,8 @@ class AttentionLayer(Layer):
             print(fake_state)
             print("------")
             print(tf.shape(fake_state))
+            print("hidden_size:",hidden_size)
+
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
 
@@ -119,23 +125,24 @@ class AttentionLayer(Layer):
         # 这个rnn就是解码器，输入 eji=a(s_i-1,hj)，其中j要遍历一遍，这个k.rnn就是把每个hj对应的eij都计算一遍
         # 输出e_outputs，就是一个概率序列
 
-
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
         shape = encoder_out_seq.shape.as_list()
         print("encoder_out_seq.shape:",shape)
-        fake_state_e = create_inital_state(encoder_out_seq,shape[1])#encoder_out_seq.shape[1])  # fake_state_e (batch,enc_seq_len)
+        # shape[1]是seq，序列长度
+        fake_state_e = create_inital_state(encoder_out_seq,shape[1])# encoder_out_seq.shape[1]) ， fake_state_e (batch,enc_seq_len)
         fake_state_e = _p(fake_state_e, "fake_state_e")
+
+        # 输出是一个e的序列，是对一个时刻而言的
         last_out, e_outputs, _ = K.rnn(
             energy_step, decoder_out_seq, [fake_state_e],
         )
 
-
         e_outputs = _p(e_outputs,"能量函数e输出：：：：")
-
-
-        fake_state_c = create_inital_state(encoder_out_seq, encoder_out_seq.shape[-1])  #
+        # shape[-1]是encoder的隐含层
+        fake_state_c = create_inital_state(encoder_out_seq,encoder_out_seq.shape[-1])  #
         fake_state_c = _p(fake_state_c, "fake_state_c")
         print("e_outputs:", e_outputs)
+
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
             context_step, e_outputs, [fake_state_c],
         )
