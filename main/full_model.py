@@ -15,10 +15,13 @@ from layers.attention import AttentionLayer
 import tensorflow as tf
 import numpy as np
 
+# seq需要加padding
+# 输入的图像需要加 0 padding
 
-def padding_wrapper(conv_output):
+def padding_wrapper(conv_output,mask_value):
     paddings = [[0, 0], [0, 50 - tf.shape(conv_output)[0]],[0,0]]
-    conv_output_with_padding = tf.pad(conv_output, paddings=paddings,constant_values=-1)
+    # 给卷基层的输出增加padding，让他可以输入到bi-gru里面去
+    conv_output_with_padding = tf.pad(conv_output, paddings=paddings, constant_values=mask_value)
     conv_output_with_padding.set_shape([None, 50, 512])  # 靠！还可以这么玩呢！给丫设置一个shape。
     return conv_output_with_padding
 
@@ -30,25 +33,21 @@ def model():
     input_image = Input(shape=(32,None,3), name='input_image') #高度固定为32，3通道
 
     # input_image = Masking(0.0)(input_image)
-    # 1. 卷基层
+    # 1. 卷基层，输出是(Batch,Width/32,512)
     conv_output = conv.conv_layer(input_image)
 
-    # paddings = [[0, 0], [0, 50 - tf.shape(conv_output)[0]],[0,0]]
-    # conv_output_with_padding = tf.pad(conv_output, paddings=paddings)
-    # conv_output_with_padding.set_shape([None, 50, 512])  # 靠！还可以这么玩呢！给丫设置一个shape。
-    conv_output_with_padding = Lambda(padding_wrapper)(conv_output);
-
-    conv_output_mask = Masking(-1)(conv_output_with_padding)
+    # 经过padding后，转变为(Batch,50,512)
+    mask_value = 0
+    conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':mask_value})(conv_output)
+    conv_output_mask = Masking(mask_value)(conv_output_with_padding)
     print("conv_output_with_padding.shape:",conv_output_with_padding)
 
     # 2.Encoder Bi-GRU编码器
     encoder_bi_gru = Bidirectional(GRU(64,return_sequences=True,return_state=True,name='encoder_gru'),name='bidirectional_encoder')
-
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output_with_padding,mask=conv_output_mask)
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
     decoder_inputs = Input(shape=(None,3862), name='decoder_inputs')
-
     decoder_gru = GRU(64*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
 
@@ -72,18 +71,3 @@ def model():
     model.summary()
 
     return model
-
-
-def train(full_model, image, label, batch_size, n_epochs=1):
-    """ Training the model """
-
-    for ep in range(n_epochs):
-        losses = []
-        for bi in range(0, label.shape[0] - batch_size, batch_size):
-
-            label_seq = to_categorical(label[bi:bi + batch_size, :], num_classes=10)# 简单点，先来0-9
-
-            full_model.train_on_batch([image, label_seq[:, :-1, :]], label_seq[:, 1:, :])
-
-        if (ep + 1) % 1 == 0:
-            print("Loss in epoch {}: {}".format(ep + 1, np.mean(losses)))

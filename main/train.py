@@ -2,20 +2,25 @@ from main import logger as log
 from main import full_model
 from main.sequence import SequenceData
 from utils import util
-from keras.callbacks import TensorBoard
-from keras.callbacks import ModelCheckpoint
-from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.python.keras.callbacks import TensorBoard
+from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 import logging
 
 logger = logging.getLogger("Train")
 
 def train():
+    # TF调试代码：
+    # from tensorflow.python import debug as tf_debug
+    # from tensorflow.python.keras import backend as K
+    # sess = K.get_session()
+    # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+    # K.set_session(sess)
 
     model = full_model.model()
 
-    train_sequence = SequenceData("训练","data/train.txt","data/charset.txt",2)
-    valid_sequence = SequenceData("验证","data/validate.txt","data/charset.txt",2)
+    train_sequence = SequenceData("训练","data/train.txt","data/charset.txt",batch_size=2)
+    valid_sequence = SequenceData("验证","data/validate.txt","data/charset.txt",batch_size=2)
     # print(isinstance(valid_sequence, Sequence))
 
     timestamp = util.timestamp_s()

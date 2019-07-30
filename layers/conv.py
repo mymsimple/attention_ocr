@@ -80,6 +80,7 @@ def conv_layer(img_input):
     # Block 7
     x = Conv2D(512, (2, 2), strides=[2, 1], activation='relu', padding='same', name='block7_conv1')(x)
 
+    # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
     return Lambda(squeeze_wrapper)(x)
 
 
