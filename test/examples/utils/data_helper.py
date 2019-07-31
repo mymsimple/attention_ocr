@@ -16,7 +16,7 @@ def read_data(filename):
 
 def sents2sequences(tokenizer, sentences, reverse=False, pad_length=None, padding_type='post'):
     encoded_text = tokenizer.texts_to_sequences(sentences)
-    preproc_text = pad_sequences(encoded_text, padding=padding_type, maxlen=pad_length)
+    preproc_text = pad_sequences(encoded_text, padding=padding_type, maxlen=pad_length, value=0)
     if reverse:
         preproc_text = np.flip(preproc_text, axis=1)
 

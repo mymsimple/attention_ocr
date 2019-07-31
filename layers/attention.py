@@ -15,6 +15,7 @@ class AttentionLayer(Layer):
 
     def __init__(self, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
+        self.supports_masking = True # 来，支持掩码
 
 
     # def __call__(self, inputs, initial_state=None, constants=None, **kwargs):
@@ -40,7 +41,7 @@ class AttentionLayer(Layer):
 
         super(AttentionLayer, self).build(input_shape)  # Be sure to call this at the end
 
-    def call(self, inputs, verbose=False):
+    def call(self, inputs, verbose=False,mask=None):
         """
         inputs: [encoder_output_sequence, decoder_output_sequence]
         """
@@ -133,8 +134,9 @@ class AttentionLayer(Layer):
         fake_state_e = _p(fake_state_e, "fake_state_e")
 
         # 输出是一个e的序列，是对一个时刻而言的
+        ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, e_outputs, _ = K.rnn(
-            energy_step, decoder_out_seq, [fake_state_e],
+            energy_step, decoder_out_seq, [fake_state_e],# decoder_out_seq是一个序列，不是一个单个值
         )
 
         e_outputs = _p(e_outputs,"能量函数e输出：：：：")
@@ -143,6 +145,7 @@ class AttentionLayer(Layer):
         fake_state_c = _p(fake_state_c, "fake_state_c")
         print("e_outputs:", e_outputs)
 
+        ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
             context_step, e_outputs, [fake_state_c],
         )

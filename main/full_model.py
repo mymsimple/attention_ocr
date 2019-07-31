@@ -22,6 +22,7 @@ def padding_wrapper(conv_output,mask_value):
     paddings = [[0, 0], [0, 50 - tf.shape(conv_output)[0]],[0,0]]
     # 给卷基层的输出增加padding，让他可以输入到bi-gru里面去
     conv_output_with_padding = tf.pad(conv_output, paddings=paddings, constant_values=mask_value)
+    #print("conv_output_with_padding.shape")
     conv_output_with_padding.set_shape([None, 50, 512])  # 靠！还可以这么玩呢！给丫设置一个shape。
     return conv_output_with_padding
 
@@ -44,10 +45,11 @@ def model():
 
     # 2.Encoder Bi-GRU编码器
     encoder_bi_gru = Bidirectional(GRU(64,return_sequences=True,return_state=True,name='encoder_gru'),name='bidirectional_encoder')
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output_with_padding,mask=conv_output_mask)
+    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output_mask)
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
     decoder_inputs = Input(shape=(None,3862), name='decoder_inputs')
+    masked_decoder_inputs = Masking(0)(decoder_inputs)
     decoder_gru = GRU(64*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
 
