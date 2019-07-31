@@ -7,7 +7,7 @@ def _p(t,name):
     return tf.Print(t,[tf.shape(t)],name+"\n")
 
 #
-def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize):
+def model(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsize):
     """ Defining a NMT model """
 
     # Define an input sequence and process it.
@@ -81,9 +81,3 @@ def define_nmt(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr
                           outputs=[decoder_inf_pred, attn_inf_states, decoder_inf_state])
 
     return full_model, encoder_model, decoder_model
-
-
-if __name__ == '__main__':
-
-    """ Checking nmt model for toy examples """
-    define_nmt(64, None, 20, 30, 20, 20)
