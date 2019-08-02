@@ -6,39 +6,41 @@ from Levenshtein import *
 import logging
 from keras.utils import np_utils
 
+
 logger = logging.getLogger("Data_Util")
 
-MAX_SEQUENCE = 20
 
-def caculate_edit_distance(preds , labels):
-    distances = [distance(p,l) for p,l in zip(preds,labels)]
+CHAR_ETX = "\x03"
+CHAR_STX = "\x02"
+CHAR_NULL = " "
+
+
+def caculate_edit_distance(preds, labels):
+    distances = [distance(p,l) for p,l in zip(preds, labels)]
     return sum(distances)/len(distances)
 
-def id2str(results,characters):
 
+def id2str(results,characters):
     values = []
     for r in results:
         str = [characters[id] for id in r]
         values.append(''.join(c for c in str if c != '\n'))
     return values
 
+
 # 加载字符集，charset.txt，最后一个是空格
 # 为了兼容charset.txt和charset6k.txt，增加鲁棒性，改一下
-# 先读入内存，除去
+# 加入3个特殊字符，0字符，padding用，STX和ETX，类似于词中的BOS，EOS
 def get_charset(charset_file):
     charset = open(charset_file, 'r', encoding='utf-8').readlines()
     charset = [ch.strip("\n") for ch in charset]
     charset = "".join(charset)
     charset = list(charset)
-    if charset[0]!=" ": charset.insert(0," ") # 0位置特殊字符，空格，用于做padding用
+    charset.insert(0, CHAR_ETX)# ETX end of text
+    charset.insert(0, CHAR_STX)# STX start of text
+    charset.insert(0, CHAR_NULL)# NULL
+    logger.info("词表插入了 BLANK:padding用, STX:文本开始, ETX:文本结束")
     return charset
-# # 加载字符集，charset.txt，最后一个是空格
-# def get_charset(charset_file):
-#     charset = open(charset_file, 'r', encoding='utf-8').readlines()
-#     charset = [ch.strip("\n") for ch in charset]
-#     charset = "".join(charset)
-#     charset = list(charset)
-#     return charset
 
 def get_file_list(dir):
     from os import listdir
@@ -47,11 +49,12 @@ def get_file_list(dir):
     # "data/train_set"
     return file_names
 
+
 # 从文件中读取样本路径和标签值
 # >data/train/21.png )beiji
 # >data/train/22.png 市平谷区金海
 # >data/train/23.png 江中路53
-def read_labeled_image_list(label_file_name,charsets):
+def read_labeled_image_list(label_file_name,charsets,conf):
     f = open(label_file_name, 'r')
     filenames = []
     labels = []
@@ -68,23 +71,21 @@ def read_labeled_image_list(label_file_name,charsets):
             logger.error("解析标签字符串失败，忽略此样本：[%s]", label)
             continue
 
-        length = len(processed_label)
-        padding_length = MAX_SEQUENCE - length
-        processed_label += " " * padding_length
+        # 前面，后面都加上空格，充当BOS和EOS
+        processed_label = CHAR_STX + processed_label + CHAR_ETX
+        logger.debug("训练用标签插入了STX和ETX:%s",processed_label)
 
+        # 旧的方法，换成地道的 pad_sequences + to_categorical
         labels_index = convert_labels_to_ids(processed_label, charsets)
         if labels_index is None:
             continue
 
-        labels_index = np.vstack(labels_index) # 因为是返回的是数组，所以要变成nparray，从list[(3700)]=>(sequence,3700)
-        if labels_index is None: continue
-
+        # labels_index = np.vstack(labels_index) # 因为是返回的是数组，所以要变成nparray，从list[(3700)]=>(sequence,3700)
         filenames.append(filename)
-        #print("!!!!!!######, labels_index.shape",labels_index.shape)
         labels.append(labels_index)
 
     f.close()
-    return filenames, labels
+    return filenames,labels
 
 
 
@@ -157,6 +158,5 @@ def convert_labels_to_ids(label, charsets):
         if not l in charsets:
             logger.error("字符串[%s]中的字符[%s]未在词表中",label,l)
             return None
-        one_hot = np_utils.to_categorical(charsets.index(l), len(charsets))
-        labels_index.append(one_hot)
+        labels_index.append(charsets.index(l))
     return labels_index

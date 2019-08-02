@@ -1,15 +1,14 @@
-from main import logger as log
-from main import full_model
-from main.sequence import SequenceData
-from utils import util
+from layers import model as _model
+from utils.sequence import SequenceData
+from utils import util, logger as log,label_utils
 from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.callbacks import ModelCheckpoint
-
+from main import conf
 import logging
 
 logger = logging.getLogger("Train")
 
-def train():
+def train(args):
     # TF调试代码：
     # from tensorflow.python import debug as tf_debug
     # from tensorflow.python.keras import backend as K
@@ -17,10 +16,12 @@ def train():
     # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
     # K.set_session(sess)
 
-    model = full_model.model()
+    charset = label_utils.get_charset(conf.CHARSET)
+    conf.CHARSET_SIZE = len(charset)
+    model = _model.model(conf)
 
-    train_sequence = SequenceData("训练","data/train.txt","data/charset.txt",batch_size=2)
-    valid_sequence = SequenceData("验证","data/validate.txt","data/charset.txt",batch_size=2)
+    train_sequence = SequenceData("训练","data/train.txt","data/charset.txt",   conf=conf,batch_size=2)
+    valid_sequence = SequenceData("验证","data/validate.txt","data/charset.txt",conf=conf,batch_size=2)
     # print(isinstance(valid_sequence, Sequence))
 
     timestamp = util.timestamp_s()
@@ -30,10 +31,11 @@ def train():
 
     logger.info("开始训练：")
 
-    model.fit_generator(generator=train_sequence,
+    model.fit_generator(
+        generator=train_sequence,
         steps_per_epoch=len(train_sequence),
-        epochs=3,
-        workers=1,
+        epochs=args.epochs,
+        workers=args.workers,
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint],
         use_multiprocessing=True,
         validation_data=valid_sequence,
@@ -42,9 +44,10 @@ def train():
     logger.info("训练结束!")
 
     model_path = "model/ocr-attention-{}.hdf5".format(util.timestamp_s())
-    model.save(model)
+    model.save(model_path)
     logger.info("保存训练后的模型到：%s", model_path)
 
 if __name__ == "__main__":
     log.init()
-    train()
+    args = conf.init_args()
+    train(args)

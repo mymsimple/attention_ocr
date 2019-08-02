@@ -70,6 +70,8 @@ def train(full_model, en_seq, fr_seq, batch_size, n_epochs=10):
             en_onehot_seq = to_categorical(en_seq[bi:bi + batch_size, :], num_classes=en_vsize)
             fr_onehot_seq = to_categorical(fr_seq[bi:bi + batch_size, :], num_classes=fr_vsize)
 
+            # decoder 输入：fr_onehot_seq[:, :-1, :]
+            # decoder 标签：fr_onehot_seq[:, :1, :]
             full_model.train_on_batch([en_onehot_seq, fr_onehot_seq[:, :-1, :]], fr_onehot_seq[:, 1:, :])
 
             l = full_model.evaluate([en_onehot_seq, fr_onehot_seq[:, :-1, :]], fr_onehot_seq[:, 1:, :],

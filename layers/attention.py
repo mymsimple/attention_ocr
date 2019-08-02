@@ -3,8 +3,9 @@ from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
 
 def _p(t,name):
-    print("调试计算图定义："+name, t)
-    return tf.Print(t,[tf.shape(t)],name)
+    return t
+    #print("调试计算图定义："+name, t)
+    #return tf.Print(t,[tf.shape(t)],name)
 
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
 class AttentionLayer(Layer):
@@ -15,7 +16,7 @@ class AttentionLayer(Layer):
 
     def __init__(self, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
-        self.supports_masking = True # 来，支持掩码
+        #self.supports_masking = True # 来，支持掩码
 
 
     # def __call__(self, inputs, initial_state=None, constants=None, **kwargs):
@@ -63,7 +64,7 @@ class AttentionLayer(Layer):
 
 
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
-            print("en_seq_len, en_hidden:",en_seq_len, en_hidden)
+            # print("en_seq_len, en_hidden:",en_seq_len, en_hidden)
             de_hidden = decode_outs.shape[-1]
 
             #  W * h_j
@@ -111,10 +112,10 @@ class AttentionLayer(Layer):
             fake_state = K.zeros_like(inputs)  # <= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
-            print(fake_state)
-            print("------")
-            print(tf.shape(fake_state))
-            print("hidden_size:",hidden_size)
+            # print(fake_state)
+            # print("------")
+            # print(tf.shape(fake_state))
+            # print("hidden_size:",hidden_size)
 
             fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
             return fake_state
@@ -128,7 +129,7 @@ class AttentionLayer(Layer):
 
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
         shape = encoder_out_seq.shape.as_list()
-        print("encoder_out_seq.shape:",shape)
+        # print("encoder_out_seq.shape:",shape)
         # shape[1]是seq，序列长度
         fake_state_e = create_inital_state(encoder_out_seq,shape[1])# encoder_out_seq.shape[1]) ， fake_state_e (batch,enc_seq_len)
         fake_state_e = _p(fake_state_e, "fake_state_e")
@@ -143,7 +144,7 @@ class AttentionLayer(Layer):
         # shape[-1]是encoder的隐含层
         fake_state_c = create_inital_state(encoder_out_seq,encoder_out_seq.shape[-1])  #
         fake_state_c = _p(fake_state_c, "fake_state_c")
-        print("e_outputs:", e_outputs)
+        # print("e_outputs:", e_outputs)
 
         ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
