@@ -50,6 +50,11 @@ def get_file_list(dir):
     return file_names
 
 
+# 字符串
+def caculate_accuracy(preds,labels):
+    result = [p==l for p,l in zip(preds,labels)]
+    return np.array(result).mean()
+
 # 从文件中读取样本路径和标签值
 # >data/train/21.png )beiji
 # >data/train/22.png 市平谷区金海

@@ -5,19 +5,17 @@
 # 原因是不能用keras自带的vgg19+keras自带的bidirectional，靠，肯定是版本不兼容的问题
 # 切换到下面的就好了，之前还是试验了用tf的bidirectional+keras的vgg19，也是不行，报错：AttributeError: 'Node' object has no attribute 'output_masks'
 # 靠谱的组合是：tf的bidirectional+tf的vgg19
-from tensorflow.python.keras.layers import Bidirectional,Masking,Input, GRU, Dense, Concatenate, TimeDistributed,ZeroPadding1D
+from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,ZeroPadding1D
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.layers import Lambda
 from tensorflow.python.keras.optimizers import adam
 from layers import conv
-from layers.attention import AttentionLayer
 import tensorflow as tf
-import numpy as np
+from layers.attention import AttentionLayer
 import logging
 
 logger = logging.getLogger("Model")
 
+# 这个函数废弃了，改用tf自带的pad_seqence了
 # # seq需要加padding
 # # 输入的图像需要加 0 padding
 # def padding_wrapper(conv_output,mask_value):
@@ -29,17 +27,26 @@ logger = logging.getLogger("Model")
 #     return conv_output_with_padding
 
 
+# y_pred is [batch,seq,charset_size]
+def accuracy(y_true, y_pred):
+    max_idx_p = tf.argmax(y_pred, axis=2)
+    max_idx_l = tf.argmax(y_true, axis=2)
+    correct_pred = tf.equal(max_idx_p, max_idx_l)
+    _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
+    return tf.reduce_mean(tf.cast(_result, tf.float32))
+
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def model(conf):
 
     # 高度和长度都不定，是None，虽然可以定义高度(32,None,3)，但是一般都是从左到右定义None的，所以第一个写32也就没有意义了
+    # fix the width & width,give up the mask idea....
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
 
     # input_image = Masking(0.0)(input_image) <----- 哭：卷基层不支持Mask，欲哭无泪：TypeError: Layer block1_conv1 does not support masking, but was passed an input_mask: Tensor("masking/Any_1:0", shape=(?, 32, ?), dtype=bool)
-    # 1. 卷基层，输出是(Batch,Width/32,512)
+    # 1. 卷基层，输出是conv output is (Batch,Width/32,512)
     conv_output = conv.conv_layer(input_image)
 
-    # 经过padding后，转变为(Batch,50,512)
+    # 经过padding后，转变为=>(Batch,50,512)
     # conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':conf.MASK_VALUE})(conv_output)
     # conv_output_mask = Masking(conf.MASK_VALUE)(conv_output)
 
@@ -60,15 +67,17 @@ def model(conf):
     # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat123_layer')([decoder_out, attn_out])
 
-    # 5.Dense layer输出层
+    # 5.Dense layer output layer 输出层
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
-    #整个模型
+    # whole model 整个模型
     model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
     opt = adam(lr=0.001)
-    model.compile(optimizer=opt, loss='categorical_crossentropy')
+    model.compile(optimizer=opt,
+                  loss='categorical_crossentropy',
+                  metrics=[accuracy])
 
     model.summary()
 

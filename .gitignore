@@ -1,6 +1,7 @@
 logs/
 data/
 .idea
+*.pyc
 __pycache__
 model
 data/small_vocab_en.txt
