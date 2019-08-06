@@ -64,7 +64,7 @@ def model(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsiz
 
     """ Encoder (Inference) model """
     encoder_inf_inputs = Input(batch_shape=(batch_size, en_timesteps, en_vsize), name='encoder_inf_inputs')
-    encoder_inf_out, encoder_inf_fwd_state, encoder_inf_back_state = encoder_gru(encoder_inf_inputs)
+    encoder_inf_out, encoder_inf_fwd_state, encoder_inf_back_state = encoder_bi_gru(encoder_inf_inputs)
     encoder_model = Model(inputs=encoder_inf_inputs, outputs=[encoder_inf_out, encoder_inf_fwd_state, encoder_inf_back_state])
 
     """ Decoder (Inference) model """

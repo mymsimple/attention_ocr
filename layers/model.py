@@ -81,9 +81,10 @@ def model(conf,args):
 
     train_model.summary()
 
-
+    # ##################################################################################################
     # 预测用的模型，单独定义！
     # 预测的模型和训练模型不一样，分成2个模型，一个是编码器 encoder model，一个解码器 decoder model
+    # ##################################################################################################
 
     ### encoder model ###
 
@@ -95,21 +96,17 @@ def model(conf,args):
 
     ### decoder model ###
 
-    decoder_inputs = Input(batch_shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-    encoder_out_states = Input(batch_shape=(None,None,2*conf.hidden_size), name='encoder_out_states')
-    decoder_init_state = Input(batch_shape=(None,2*conf.hidden_size), name='decoder_init_state')
+    decoder_inputs =     Input(shape=(conf.INPUT_IMAGE_WIDTH/4,conf.CHARSET_SIZE), name='decoder_inputs')
+    encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
+    decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
 
-    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)(decoder_init_state))
-    attn_layer = AttentionLayer(name='attention_layer')
+    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=decoder_init_state)
     attn_out, attn_states = attn_layer([encoder_out_states, decoder_out])
 
-    decoder_concat_input = Concatenate(axis=-1, name='concat123_layer')([decoder_out, attn_out])
-
-    dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
-    dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
-    infer_decoder_model = Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state], outputs=[decoder_pred,attn_states,decoder_state])
+    infer_decoder_model = Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state],
+                                outputs=[decoder_pred,attn_states,decoder_state])
     infer_decoder_model.summary()
 
     return train_model,infer_decoder_model,infer_encoder_model

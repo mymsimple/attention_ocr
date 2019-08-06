@@ -3,12 +3,14 @@ from main import conf
 from layers import model as _model
 import logging,cv2
 import numpy as np
+from tensorflow.python.keras.utils import to_categorical
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 logger = logging.getLogger("Train")
 
 def pred(args):
     charset = label_utils.get_charset(conf.CHARSET)
-    conf.CHARSET_SIZE = len(charset)
+    CHARSET_SIZE = len(charset)
 
     # 定义模型
     _,encoder_model,decoder_model = _model.inference_model(conf,args)
@@ -20,44 +22,51 @@ def pred(args):
 
     logger.info("开始预测图片：%s",args.image)
     image = cv2.imread(args.image)
-    test_fr_seq = sents2sequences(fr_tokenizer, ['sos'], fr_vsize)
 
-    test_en_onehot_seq = to_categorical(test_en_seq, num_classes=en_vsize)
-    test_fr_onehot_seq = np.expand_dims(to_categorical(test_fr_seq, num_classes=fr_vsize), 1)
 
     # 编码器先预测
-    encoder_outs, encoder_fwd_state, encoder_back_state = encoder_model.predict(image)
+    encoder_out_states, encoder_fwd_state, encoder_back_state = encoder_model.predict(image)
 
     # 准备编码器的初始输入状态
     decoder_init_state = np.concatenate([encoder_fwd_state, encoder_back_state], axis=-1)
 
     attention_weights = []
-    fr_text = ''
+
+    # 开始是STX
+    from utils.label_utils import convert_to_id
+    decoder_index = convert_to_id([conf.CHAR_ETX], charset)
+    decoder_state = decoder_init_state
+
+    result = ""
 
     # 开始预测字符
     for i in range(conf.MAX_SEQUENCE):
 
-        decoder_inputs = conf.STX
-        encoder_out_states =
-        decoder_init_state =
+        # 别看又padding啥的，其实就是一个字符，这样做是为了凑输入的维度定义
+        decoder_inputs = pad_sequences(decoder_index,maxlen=conf.MAX_SEQUENCE,padding="post",value=0)
+        decoder_inputs = to_categorical(decoder_inputs,num_classes=CHARSET_SIZE)
 
-        # infer_decoder_model : Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state], outputs=[decoder_pred,attn_states,decoder_state])
-        decoder_out, attention, decoder_init_state = decoder_model.predict([decoder_inputs, encoder_out_states,decoder_init_stat])
+        # infer_decoder_model : Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state],
+        # outputs=[decoder_pred,attn_states,decoder_state])
+        # encoder_out_states->attention用
+        decoder_out, attention, decoder_state = \
+            decoder_model.predict([decoder_inputs,encoder_out_states,decoder_state])
+
+        # 得到当前时间的输出，是一个3770的概率分布，所以要argmax，得到一个id
         decoder_index = np.argmax(decoder_out, axis=-1)[0, 0]
 
         if decoder_index == 2:
             logger.info("预测字符为ETX，退出")
             break #==>conf.CHAR_ETX: break
 
-        to_categorical()
+        attention_weights.append(attention)
 
-        test_fr_seq = sents2sequences(fr_tokenizer, [fr_index2word[dec_ind]], fr_vsize)
-        test_fr_onehot_seq = np.expand_dims(to_categorical(test_fr_seq, num_classes=fr_vsize), 1)
+        pred_char = label_utils.id2str(decoder_index,charset=charset)
 
-        attention_weights.append((dec_ind, attention))
-        fr_text += fr_index2word[dec_ind] + ' '
+        logger.info("预测字符为:%s",pred_char)
+        result+= pred_char
 
-    return fr_text, attention_weights
+    return pred_char,attention_weights
 
 def sents2sequences(tokenizer, sentences, reverse=False, pad_length=None, padding_type='post'):
     encoded_text = tokenizer.texts_to_sequences(sentences)
@@ -71,4 +80,6 @@ def sents2sequences(tokenizer, sentences, reverse=False, pad_length=None, paddin
 if __name__ == "__main__":
     log.init()
     args = conf.init_pred_args()
-    pred(args)
+    result,attention_probs = pred(args)
+    logger.info("预测字符串为：%s",result)
+    logger.info("注意力概率为：%r", attention_probs)
