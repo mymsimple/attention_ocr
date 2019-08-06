@@ -1,5 +1,5 @@
 # from keras.preprocessing.sequence import Sequence
-from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.python.keras.utils import Sequence
 from utils import image_utils, label_utils
 import logging,math
 import numpy as np
