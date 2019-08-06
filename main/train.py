@@ -18,7 +18,7 @@ def train(args):
 
     charset = label_utils.get_charset(conf.CHARSET)
     conf.CHARSET_SIZE = len(charset)
-    model = _model.model(conf)
+    model = _model.model(conf,args)
 
     train_sequence = SequenceData(name="训练",
                                   label_file="data/train.txt",

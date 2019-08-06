@@ -6,10 +6,9 @@ from Levenshtein import *
 import logging
 from keras.utils import np_utils
 
-
 logger = logging.getLogger("Data_Util")
 
-
+rex = re.compile(' ')
 CHAR_ETX = "\x03"
 CHAR_STX = "\x02"
 CHAR_NULL = " "
@@ -42,18 +41,12 @@ def get_charset(charset_file):
     logger.info("词表插入了 BLANK:padding用, STX:文本开始, ETX:文本结束")
     return charset
 
-def get_file_list(dir):
-    from os import listdir
-    from os.path import isfile, join
-    file_names = ["data/train_set/"+f for f in listdir(dir) if isfile(join(dir, f))]
-    # "data/train_set"
-    return file_names
-
 
 # 字符串
 def caculate_accuracy(preds,labels):
     result = [p==l for p,l in zip(preds,labels)]
     return np.array(result).mean()
+
 
 # 从文件中读取样本路径和标签值
 # >data/train/21.png )beiji
@@ -78,7 +71,7 @@ def read_labeled_image_list(label_file_name,charsets,conf):
 
         # 前面，后面都加上空格，充当BOS和EOS
         processed_label = CHAR_STX + processed_label + CHAR_ETX
-        logger.debug("训练用标签插入了STX和ETX:%s",processed_label)
+        # logger.debug("训练用标签插入了STX和ETX:%s",processed_label)
 
         # 旧的方法，换成地道的 pad_sequences + to_categorical
         labels_index = convert_labels_to_ids(processed_label, charsets)
@@ -93,8 +86,6 @@ def read_labeled_image_list(label_file_name,charsets,conf):
     return filenames,labels
 
 
-
-
 # labels是所有的标签的数组['我爱北京','我爱天安门',...,'他说的法定']
 # characters:词表
 def convert_to_id(labels,characters):
@@ -105,15 +96,13 @@ def convert_to_id(labels,characters):
 
     return _lables
 
-rex = re.compile(' ')
-logger = logging.getLogger("TextUitil")
-
 
 def process_unknown_charactors_all(all_sentence, dict,replace_char=None):
     result = []
     for sentence in all_sentence:
         result.append(process_unknown_charactors(sentence, dict,replace_char))
     return result
+
 
 # 1.处理一些“宽”字符,替换成词表里的
 # 2.易混淆的词，变成统一的

@@ -36,7 +36,7 @@ def accuracy(y_true, y_pred):
     return tf.reduce_mean(tf.cast(_result, tf.float32))
 
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
-def model(conf):
+def model(conf,args):
 
     # 高度和长度都不定，是None，虽然可以定义高度(32,None,3)，但是一般都是从左到右定义None的，所以第一个写32也就没有意义了
     # fix the width & width,give up the mask idea....
@@ -74,7 +74,7 @@ def model(conf):
 
     # whole model 整个模型
     model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
-    opt = adam(lr=0.001)
+    opt = adam(lr=args.learning_rate)
     model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=[accuracy])
@@ -85,7 +85,7 @@ def model(conf):
 
 
 # 预测的模型和训练模型不一样，
-def inference_model(conf):
+def inference_model(conf,args):
 
     # 高度和长度都不定，是None，虽然可以定义高度(32,None,3)，但是一般都是从左到右定义None的，所以第一个写32也就没有意义了
     # fix the width & width,give up the mask idea....
@@ -121,11 +121,11 @@ def inference_model(conf):
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
-    
+
 
     # whole model 整个模型
     model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
-    opt = adam(lr=0.001)
+    opt = adam(lr=args.learning_rate)
     model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=[accuracy])

@@ -18,6 +18,7 @@ def init_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs" ,default=1,type=int,help="")
     parser.add_argument("--batch" , default=1,type=int,help="")
+    parser.add_argument("--learning_rate", default=0.001, type=float, help="")
     parser.add_argument("--workers",default=1,type=int,help="")
     parser.add_argument("--validation_steps",default=1,type=int, help="")
     parser.add_argument("--validation_batch",default=1,type=int, help="")
