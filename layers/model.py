@@ -7,7 +7,7 @@
 # 靠谱的组合是：tf的bidirectional+tf的vgg19
 from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,ZeroPadding1D
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.optimizers import adam
+from tensorflow.python.keras.optimizers import Adam
 from layers import conv
 import tensorflow as tf
 from layers.attention import AttentionLayer
@@ -74,7 +74,7 @@ def model(conf,args):
 
     # whole model 整个模型
     model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
-    opt = adam(lr=args.learning_rate)
+    opt = Adam(lr=args.learning_rate)
     model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=[accuracy])
