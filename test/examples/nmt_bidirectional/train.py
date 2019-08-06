@@ -161,20 +161,20 @@ if __name__ == '__main__':
     fr_index2word = dict(zip(fr_tokenizer.word_index.values(), fr_tokenizer.word_index.keys()))
 
     """ Inferring with trained model """
-    #
-    # np.random.seed(100)
-    # print(len(ts_en_text))
-    # rand_test_ids = np.random.randint(0, len(ts_en_text), size=10)
-    # for rid in rand_test_ids:
-    #     test_en = ts_en_text[rid]
-    #     logger.info('\nTranslating: {}'.format(test_en))
-    #
-    #     test_en_seq = sents2sequences(en_tokenizer, [test_en], pad_length=en_timesteps)
-    #     test_fr, attn_weights = infer_nmt(
-    #         encoder_model=infer_enc_model, decoder_model=infer_dec_model,
-    #         test_en_seq=test_en_seq, en_vsize=en_vsize, fr_vsize=fr_vsize)
-    #     logger.info('\tFrench: {}'.format(test_fr))
-    #
-    #     """ Attention plotting """
-    #     plot_attention_weights(test_en_seq, attn_weights, en_index2word, fr_index2word,
-    #                            base_dir=base_dir, filename='attention_{}.png'.format(rid))
+
+    np.random.seed(100)
+    print(len(ts_en_text))
+    rand_test_ids = np.random.randint(0, len(ts_en_text), size=10)
+    for rid in rand_test_ids:
+        test_en = ts_en_text[rid]
+        logger.info('\nTranslating: {}'.format(test_en))
+
+        test_en_seq = sents2sequences(en_tokenizer, [test_en], pad_length=en_timesteps)
+        test_fr, attn_weights = infer_nmt(
+            encoder_model=infer_enc_model, decoder_model=infer_dec_model,
+            test_en_seq=test_en_seq, en_vsize=en_vsize, fr_vsize=fr_vsize)
+        logger.info('\tFrench: {}'.format(test_fr))
+
+        """ Attention plotting """
+        plot_attention_weights(test_en_seq, attn_weights, en_index2word, fr_index2word,
+                               base_dir=base_dir, filename='attention_{}.png'.format(rid))

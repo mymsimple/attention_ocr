@@ -72,8 +72,7 @@ def model(hidden_size, batch_size, en_timesteps, en_vsize, fr_timesteps, fr_vsiz
     encoder_inf_states = Input(batch_shape=(batch_size, en_timesteps, 2*hidden_size), name='encoder_inf_states')
     decoder_init_state = Input(batch_shape=(batch_size, 2*hidden_size), name='decoder_init')
 
-    decoder_inf_out, decoder_inf_state = decoder_gru(
-        decoder_inf_inputs, initial_state=decoder_init_state)
+    decoder_inf_out, decoder_inf_state = decoder_gru(decoder_inf_inputs, initial_state=decoder_init_state)
     attn_inf_out, attn_inf_states = attn_layer([encoder_inf_states, decoder_inf_out])
     decoder_inf_concat = Concatenate(axis=-1, name='concat')([decoder_inf_out, attn_inf_out])
     decoder_inf_pred = TimeDistributed(dense)(decoder_inf_concat)

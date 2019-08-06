@@ -73,63 +73,44 @@ def model(conf,args):
     decoder_pred = dense_time(decoder_concat_input)
 
     # whole model 整个模型
-    model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
+    train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
     opt = Adam(lr=args.learning_rate)
-    model.compile(optimizer=opt,
+    train_model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=[accuracy])
 
-    model.summary()
-
-    return model
+    train_model.summary()
 
 
-# 预测的模型和训练模型不一样，
-def inference_model(conf,args):
+    # 预测用的模型，单独定义！
+    # 预测的模型和训练模型不一样，分成2个模型，一个是编码器 encoder model，一个解码器 decoder model
 
-    # 高度和长度都不定，是None，虽然可以定义高度(32,None,3)，但是一般都是从左到右定义None的，所以第一个写32也就没有意义了
-    # fix the width & width,give up the mask idea....
+    ### encoder model ###
+
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
-
-    # input_image = Masking(0.0)(input_image) <----- 哭：卷基层不支持Mask，欲哭无泪：TypeError: Layer block1_conv1 does not support masking, but was passed an input_mask: Tensor("masking/Any_1:0", shape=(?, 32, ?), dtype=bool)
-    # 1. 卷基层，输出是conv output is (Batch,Width/32,512)
     conv_output = conv.conv_layer(input_image)
-
-    # 经过padding后，转变为=>(Batch,50,512)
-    # conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':conf.MASK_VALUE})(conv_output)
-    # conv_output_mask = Masking(conf.MASK_VALUE)(conv_output)
-
-    # 2.Encoder Bi-GRU编码器
-    encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,return_sequences=True,return_state=True,name='encoder_gru'),name='bidirectional_encoder')
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output)
+    infer_encoder_model = Model(inputs=input_image,outputs=[encoder_out, encoder_fwd_state, encoder_back_state])
+    infer_encoder_model.summary()
 
-    # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
-    decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-    # masked_decoder_inputs = Masking(conf.MASK_VALUE)(decoder_inputs)
-    decoder_gru = GRU(conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
-    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
+    ### decoder model ###
 
-    # 4.Attention layer注意力层
+    decoder_inputs = Input(batch_shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
+    encoder_out_states = Input(batch_shape=(None,None,2*conf.hidden_size), name='encoder_out_states')
+    decoder_init_state = Input(batch_shape=(None,2*conf.hidden_size), name='decoder_init_state')
+
+    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)(decoder_init_state))
     attn_layer = AttentionLayer(name='attention_layer')
-    attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+    attn_out, attn_states = attn_layer([encoder_out_states, decoder_out])
 
-    # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat123_layer')([decoder_out, attn_out])
 
-    # 5.Dense layer output layer 输出层
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
+    infer_decoder_model = Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state], outputs=[decoder_pred,attn_states,decoder_state])
+    infer_decoder_model.summary()
 
+    return train_model,infer_decoder_model,infer_encoder_model
 
-    # whole model 整个模型
-    model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
-    opt = adam(lr=args.learning_rate)
-    model.compile(optimizer=opt,
-                  loss='categorical_crossentropy',
-                  metrics=[accuracy])
-
-    model.summary()
-
-    return model

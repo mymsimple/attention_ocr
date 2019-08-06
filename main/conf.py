@@ -4,6 +4,10 @@ import argparse
     also define one command-lines argument parsing method: init_args
 '''
 
+CHAR_ETX = "\x03"
+CHAR_STX = "\x02"
+CHAR_NULL = " "
+
 MAX_SEQUENCE = 30        # 最大的识别汉字的长度
 MASK_VALUE = 0
 CHARSET = "data/charset.txt" # 3770的一级字库

@@ -9,10 +9,8 @@ from keras.utils import np_utils
 logger = logging.getLogger("Data_Util")
 
 rex = re.compile(' ')
-CHAR_ETX = "\x03"
-CHAR_STX = "\x02"
-CHAR_NULL = " "
 
+from main.conf import *
 
 def caculate_edit_distance(preds, labels):
     distances = [distance(p,l) for p,l in zip(preds, labels)]
