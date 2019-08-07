@@ -12,11 +12,11 @@ echo "生产模式"
 echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 
 nohup python -m main.train \
-    --epochs 1000000 \
+    --epochs=1000000 \
     --batch=64 \
-    --learning_rate = 0.001 \
-    --validation_steps = 1000 \
-    --validation_bacth = 200 \
+    --learning_rate=0.001 \
+    --validation_steps=1000 \
+    --validation_batch=64 \
     --workers=3 \
-    --early_stop = 10 \
+    --early_stop=10 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &
