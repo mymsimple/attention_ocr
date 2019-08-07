@@ -13,7 +13,7 @@ def pred(args):
     CHARSET_SIZE = len(charset)
 
     # 定义模型
-    _,encoder_model,decoder_model = _model.inference_model(conf,args)
+    _,decoder_model,encoder_model = _model.model(conf,args)
 
     # 分别加载模型
     encoder_model.load_model(args.model)

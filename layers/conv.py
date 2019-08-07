@@ -5,8 +5,11 @@ from tensorflow.python.keras.backend import squeeze
 from tensorflow.python.keras.layers import Lambda
 from tensorflow.python.keras.engine import Layer
 class Conv(Layer):
-    def squeeze_wrapper(tensor):
+    def squeeze_wrapper(self,tensor):
         return squeeze(tensor, axis=1)
+
+    def __init__(self, **kwargs):
+        super(Conv, self).__init__(**kwargs)
 
     '''
         #抽feature，用的cnn网络
@@ -56,36 +59,39 @@ class Conv(Layer):
         x = inputs
         for layer in self.layers:
             x = layer(x)
+
         return x
 
     def build(self, input_shape):
         self.layers = []
         # Block 1
         self.layers.append(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1'))
-        self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+        self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool'))
 
         # Block 2
-        self.layers.append(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
-        self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+        self.layers.append(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1'))
+        self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool'))
 
         # Block 3
-        self.layers.append(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
+        self.layers.append(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1'))
 
         # Block 4
-        self.layers.append(Conv2D(256, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
-        self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')(x) # <------ pool kernel is (2,1)!!!!!
+        self.layers.append(Conv2D(256, (3, 3), activation='relu', padding='same', name='block4_conv1'))
+        self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')) # <------ pool kernel is (2,1)!!!!!
 
         # Block 5
-        self.layers.append(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
-        self.layers.append(BatchNormalization()(x)
+        self.layers.append(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1'))
+        self.layers.append(BatchNormalization())
 
         # Block 6
-        self.layers.append(Conv2D(512, (3, 3), activation='relu', padding='same', name='block6_conv1')(x)
-        self.layers.append(BatchNormalization()(x)
-        self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')(x) # <------ pool kernel is (2,1)!!!!!
+        self.layers.append(Conv2D(512, (3, 3), activation='relu', padding='same', name='block6_conv1'))
+        self.layers.append(BatchNormalization())
+        self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')) # <------ pool kernel is (2,1)!!!!!
 
         # Block 7
         self.layers.append(Conv2D(512, (2, 2), strides=[2, 1], activation='relu', padding='same', name='block7_conv1'))
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
-        self.layers.append(Lambda(squeeze_wrapper))
+        self.layers.append(Lambda(self.squeeze_wrapper))
+
+        super(Conv, self).build(input_shape)

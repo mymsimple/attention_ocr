@@ -12,8 +12,12 @@ from layers import conv
 import tensorflow as tf
 from layers.attention import AttentionLayer
 import logging
+from layers.conv import Conv
 
 logger = logging.getLogger("Model")
+
+conv = Conv()
+
 
 # 这个函数废弃了，改用tf自带的pad_seqence了
 # # seq需要加padding
@@ -44,7 +48,7 @@ def model(conf,args):
 
     # input_image = Masking(0.0)(input_image) <----- 哭：卷基层不支持Mask，欲哭无泪：TypeError: Layer block1_conv1 does not support masking, but was passed an input_mask: Tensor("masking/Any_1:0", shape=(?, 32, ?), dtype=bool)
     # 1. 卷基层，输出是conv output is (Batch,Width/32,512)
-    conv_output = conv.conv_layer(input_image)
+    conv_output = conv(input_image)
 
     # 经过padding后，转变为=>(Batch,50,512)
     # conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':conf.MASK_VALUE})(conv_output)
@@ -88,25 +92,30 @@ def model(conf,args):
 
     ### encoder model ###
 
-    input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
-    conv_output = conv.conv_layer(input_image)
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output)
-    infer_encoder_model = Model(inputs=input_image,outputs=[encoder_out, encoder_fwd_state, encoder_back_state])
+    infer_input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
+    infer_conv_output = conv(infer_input_image) # 看！复用了 decoder_gru
+    infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state = \
+        encoder_bi_gru(infer_conv_output)
+    infer_encoder_model = Model(inputs=infer_input_image,
+                                outputs=[infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state])
     infer_encoder_model.summary()
 
     ### decoder model ###
 
-    decoder_inputs =     Input(shape=(conf.INPUT_IMAGE_WIDTH/4,conf.CHARSET_SIZE), name='decoder_inputs')
-    encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
-    decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
+    infer_decoder_inputs =     Input(shape=(conf.INPUT_IMAGE_WIDTH/4,conf.CHARSET_SIZE), name='decoder_inputs')
+    infer_encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
+    infer_decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
 
-    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=decoder_init_state)
-    attn_out, attn_states = attn_layer([encoder_out_states, decoder_out])
+    infer_decoder_out, infer_decoder_state = \
+        decoder_gru(infer_decoder_inputs, initial_state=infer_decoder_init_state)  # 看！复用了 decoder_gru
 
-    decoder_pred = dense_time(decoder_concat_input)
+    infer_attn_out, infer_attn_states = \
+        attn_layer([infer_encoder_out_states, infer_decoder_out]) # 看！复用了attn_layer
 
-    infer_decoder_model = Model(inputs=[decoder_inputs, encoder_out_states,decoder_init_state],
-                                outputs=[decoder_pred,attn_states,decoder_state])
+    infer_decoder_concat = Concatenate(axis=-1, name='concat')([infer_decoder_out, infer_attn_out])
+    infer_decoder_pred = TimeDistributed(dense)(infer_decoder_concat) # 看！复用了dense
+    infer_decoder_model = Model(inputs=[infer_decoder_inputs, infer_encoder_out_states,infer_decoder_init_state],
+                                outputs=[infer_decoder_pred,infer_attn_states,infer_decoder_state])
     infer_decoder_model.summary()
 
     return train_model,infer_decoder_model,infer_encoder_model
