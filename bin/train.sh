@@ -1,9 +1,17 @@
 echo "开始训练"
+
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     echo "调试模式"
     python -m main.train
     exit
 fi
+
+if [ "$1" = "stop" ]; then
+    echo "停止训练"
+    ps aux|grep python|grep Attention|awk '{print $2}'|xargs kill -9
+    exit
+fi
+
 
 Date=$(date +%Y%m%d%H%M)
 export CUDA_VISIBLE_DEVICES=0

@@ -51,8 +51,9 @@ class SequenceData(Sequence):
     # 1、check每一个图片文件是否存在
     # 2、看识别文字的字不在字表中，剔除这个样本
     def initialize(self,conf):
+        logger.info("开始加载[%s]样本和标注",self.name)
         image_file_names, labels = label_utils.read_labeled_image_list(self.label_file,self.charsets,conf)
         self.images_labels = list(zip(image_file_names, labels))
-        logger.info("加载了%s样本： 标签[%d]个,图像[%d]张", self.name, len(labels), len(self.images_labels))
+        logger.info("加载了[%s]样本： 标注[%d]个,图像[%d]张", self.name, len(labels), len(self.images_labels))
         np.random.shuffle(self.images_labels)
-        logger.info("Shuffle样本数据")
+        logger.info("Shuffle[%s]样本数据", self.name)

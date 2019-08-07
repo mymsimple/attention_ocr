@@ -54,6 +54,7 @@ def read_labeled_image_list(label_file_name,charsets,conf):
     f = open(label_file_name, 'r')
     filenames = []
     labels = []
+    count = 0
     for line in f:
         # logger.debug("line=%s",line)
         filename , _ , label = line[:-1].partition(' ') # partition函数只读取第一次出现的标志，分为左右两个部分,[:-1]去掉回车
@@ -79,6 +80,8 @@ def read_labeled_image_list(label_file_name,charsets,conf):
         # labels_index = np.vstack(labels_index) # 因为是返回的是数组，所以要变成nparray，从list[(3700)]=>(sequence,3700)
         filenames.append(filename)
         labels.append(labels_index)
+        count+=1
+        if count % 1000 == 0: logger.debug("加载了%d个数据...",count)
 
     f.close()
     return filenames,labels
