@@ -5,8 +5,9 @@ import logging,math
 import numpy as np
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 from tensorflow.python.keras.utils import to_categorical
-
+import multiprocessing
 logger = logging.getLogger("SequenceData")
+
 
 # 自定义的数据加载器
 class SequenceData(Sequence):
@@ -17,6 +18,7 @@ class SequenceData(Sequence):
         self.batch_size = batch_size
         self.charsets = label_utils.get_charset(charset_file)
         self.initialize(conf,)
+
 
     # 返回长度，我理解是一个epoch中的总步数
     # 'Denotes the number of batches per epoch'
@@ -50,10 +52,20 @@ class SequenceData(Sequence):
     # 额外做两件事：
     # 1、check每一个图片文件是否存在
     # 2、看识别文字的字不在字表中，剔除这个样本
-    def initialize(self,conf):
+    def initialize(self,conf,args):
         logger.info("开始加载[%s]样本和标注",self.name)
-        image_file_names, labels = label_utils.read_labeled_image_list(self.label_file,self.charsets,conf)
-        self.images_labels = list(zip(image_file_names, labels))
+
+        data_list = label_utils.read_data_file(self.label_file,conf.PREPROCESS_NUM)
+
+        pool_size = 20
+        pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
+        pool_outputs = pool.map(label_utils.process_lines, data_list)
+        pool.close()  # no more tasks
+        pool.join()  # wrap up current tasks
+        logger.debug("使用[%d]个进程，并发处理完所有的标签数据",conf.PREPROCESS_NUM)
+
+        self.images_labels = pool_outputs
         logger.info("加载了[%s]样本： 标注[%d]个,图像[%d]张", self.name, len(labels), len(self.images_labels))
         np.random.shuffle(self.images_labels)
         logger.info("Shuffle[%s]样本数据", self.name)
+
