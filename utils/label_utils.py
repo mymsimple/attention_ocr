@@ -66,7 +66,7 @@ def read_data_file(label_file_name, process_num):
         for i in range(0, len(l), step):
             yield l[i:i + step]
 
-    print(len(data),process_num)
+    # print(len(data),process_num)
     data_list = list(chunks(data, len(data) // process_num ))
     # print(data_list)
     logger.debug("所有数据[%d]条，被分箱到[%d]中",len(data),process_num)

@@ -67,8 +67,10 @@ class SequenceData(Sequence):
         logger.debug("使用[%d]个进程，并发处理完所有的标签数据",conf.PREPROCESS_NUM)
 
         self.images_labels =  [item for sublist in pool_outputs for item in sublist]
-        print(self.images_labels)
+
         logger.info("加载了[%s]样本： [%d]个", self.name, len(self.images_labels))
+
         np.random.shuffle(self.images_labels)
+
         logger.info("Shuffle[%s]样本数据", self.name)
 
