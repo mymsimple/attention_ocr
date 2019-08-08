@@ -119,4 +119,3 @@ def model(conf,args):
     infer_decoder_model.summary()
 
     return train_model,infer_decoder_model,infer_encoder_model
-

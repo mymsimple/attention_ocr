@@ -51,30 +51,34 @@ def caculate_accuracy(preds,labels):
 # >data/train/22.png 市平谷区金海
 # >data/train/23.png 江中路53
 # bin_num:分箱个数
-def read_data_file(label_file_name, bin_num):
+def read_data_file(label_file_name, process_num):
     f = open(label_file_name, 'r')
     data = []
     for line in f:
         filename , _ , label = line[:-1].partition(' ') # partition函数只读取第一次出现的标志，分为左右两个部分,[:-1]去掉回车
-        data.append(zip(filename,label))
+        # print(filename,":",label)
+        data.append((filename,label))
     f.close()
 
     logger.debug("从[%s]中读取了所有原始数据，一共[%d]行",label_file_name,len(data))
 
-    def chunks(l, n):
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
+    def chunks(l, step):
+        for i in range(0, len(l), step):
+            yield l[i:i + step]
 
-    data_list = list(chunks(data, len(data) % bin_num))
-
-    logger.debug("所有数据[%d]条，被分箱到[%d]中",len(data),bin_num)
+    print(len(data),process_num)
+    data_list = list(chunks(data, len(data) // process_num ))
+    # print(data_list)
+    logger.debug("所有数据[%d]条，被分箱到[%d]中",len(data),process_num)
 
     return data_list
 
-def process_lines(data):
+def process_lines(charsets,data):
     result = []
-    for file,label in zip(*data):
-        result.append(zip(process_line(file,label)))
+    for d in data:
+        # print(d)
+        file, label = d
+        result.append(process_line(file,label,charsets))
     return result
 
 # 处理每一行数据：data/train/22.png 市平谷区金海

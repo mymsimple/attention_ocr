@@ -24,11 +24,13 @@ def train(args):
                                   label_file="data/train.txt",
                                   charset_file="data/charset.txt",
                                   conf=conf,
+                                  args=args,
                                   batch_size=args.batch)
     valid_sequence = SequenceData(name="验证",
                                   label_file="data/validate.txt",
                                   charset_file="data/charset.txt",
                                   conf=conf,
+                                  args=args,
                                   batch_size=args.validation_batch)
 
     timestamp = util.timestamp_s()

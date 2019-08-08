@@ -11,13 +11,13 @@ logger = logging.getLogger("SequenceData")
 
 # 自定义的数据加载器
 class SequenceData(Sequence):
-    def __init__(self, name,label_file, charset_file,conf,batch_size=32):
+    def __init__(self, name,label_file, charset_file,conf,args,batch_size=32):
         self.conf = conf
         self.name = name
         self.label_file = label_file
         self.batch_size = batch_size
         self.charsets = label_utils.get_charset(charset_file)
-        self.initialize(conf,)
+        self.initialize(conf,args)
 
 
     # 返回长度，我理解是一个epoch中的总步数
@@ -57,15 +57,18 @@ class SequenceData(Sequence):
 
         data_list = label_utils.read_data_file(self.label_file,conf.PREPROCESS_NUM)
 
-        pool_size = 20
+        pool_size = conf.PREPROCESS_NUM # 把进程池数和要分箱的数量搞成一致
+        from functools import partial
+        func = partial(label_utils.process_lines, self.charsets)
         pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
-        pool_outputs = pool.map(label_utils.process_lines, data_list)
+        pool_outputs = pool.map(func, data_list)
         pool.close()  # no more tasks
         pool.join()  # wrap up current tasks
         logger.debug("使用[%d]个进程，并发处理完所有的标签数据",conf.PREPROCESS_NUM)
 
-        self.images_labels = pool_outputs
-        logger.info("加载了[%s]样本： 标注[%d]个,图像[%d]张", self.name, len(labels), len(self.images_labels))
+        self.images_labels =  [item for sublist in pool_outputs for item in sublist]
+        print(self.images_labels)
+        logger.info("加载了[%s]样本： [%d]个", self.name, len(self.images_labels))
         np.random.shuffle(self.images_labels)
         logger.info("Shuffle[%s]样本数据", self.name)
 
