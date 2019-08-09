@@ -62,6 +62,7 @@ class Conv(Layer):
 
         return x
 
+
     def build(self, input_shape):
         self.layers = []
         # Block 1

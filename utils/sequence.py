@@ -1,11 +1,13 @@
 # from keras.preprocessing.sequence import Sequence
 from tensorflow.python.keras.utils import Sequence
 from utils import image_utils, label_utils
-import logging,math
+import logging,math,os
 import numpy as np
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 from tensorflow.python.keras.utils import to_categorical
 import multiprocessing
+import time
+
 logger = logging.getLogger("SequenceData")
 
 
@@ -19,7 +21,6 @@ class SequenceData(Sequence):
         self.charsets = label_utils.get_charset(charset_file)
         self.initialize(conf,args)
 
-
     # 返回长度，我理解是一个epoch中的总步数
     # 'Denotes the number of batches per epoch'
     def __len__(self):
@@ -27,9 +28,13 @@ class SequenceData(Sequence):
 
     # 即通过索引获取a[0],a[1]这种
     def __getitem__(self, idx):
+        start_time = time.time()
 
         # unzip的结果是 [(1,2,3),(a,b,c)]，注意，里面是个tuple，而不是list，所以用的时候还要list()转化一下
-        image_names, label_ids = list(zip(*self.images_labels[idx: idx+self.batch_size]))
+        image_names, label_ids = list(zip(*self.images_labels[
+            idx * self.batch_size : (idx + 1) * self.batch_size
+        ]))
+
         images = image_utils.read_and_resize_image(list(image_names),self.conf)
 
         # labels是[nparray([<3770>],[<3770>],[<3770>]),...]，是一个数组，里面是不定长的3370维度的向量,(N,3770),如： (18, 3861)
@@ -37,10 +42,16 @@ class SequenceData(Sequence):
         labels = pad_sequences(labels,maxlen=self.conf.MAX_SEQUENCE,padding="post",value=0)
         labels = to_categorical(labels,num_classes=len(self.charsets))
 
+        logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
+                    os.getpid(),
+                    idx,
+                    time.time()-start_time)
+
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  doceder验证标签
         # logger.debug("加载批次数据：%r",images.shape)
+
         return [images,labels[:,:-1,:]],labels[:,1:,:]
 
     # 一次epoch后，重新shuffle一下样本
