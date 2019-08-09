@@ -3,6 +3,7 @@ echo "开始训练"
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     echo "调试模式"
     python -m main.train \
+    --name=attention_ocr \
     --epochs=3 \
     --batch=16 \
     --learning_rate=0.001 \
@@ -15,7 +16,7 @@ fi
 
 if [ "$1" = "stop" ]; then
     echo "停止训练"
-    ps aux|grep python|grep Attention|awk '{print $2}'|xargs kill -9
+    ps aux|grep python|grep attention_ocr|awk '{print $2}'|xargs kill -9
     exit
 fi
 
@@ -27,6 +28,7 @@ echo "生产模式"
 echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 
 nohup python -m main.train \
+    --name=attention_ocr \
     --epochs=3 \
     --batch=64 \
     --learning_rate=0.001 \
