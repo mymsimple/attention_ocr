@@ -69,7 +69,7 @@ class SequenceData(Sequence):
     def initialize(self,conf,args):
         logger.info("开始加载[%s]样本和标注",self.name)
 
-        data_list = label_utils.read_data_file(self.label_file,conf.PREPROCESS_NUM)
+        data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
 
         pool_size = conf.PREPROCESS_NUM # 把进程池数和要分箱的数量搞成一致
         from functools import partial

@@ -11,6 +11,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     --validation_steps=2  \
     --validation_batch=8 \
     --workers=2 \
+    --preprocess_num=5 \
     --early_stop=10
     exit
 fi
@@ -37,5 +38,6 @@ nohup python -m main.train \
     --validation_batch=64 \
     --validation_steps=10 \
     --workers=10 \
+    --preprocess_num=100 \
     --early_stop=10 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &
