@@ -68,8 +68,10 @@ class SequenceData(Sequence):
     # 2、看识别文字的字不在字表中，剔除这个样本
     def initialize(self,conf,args):
         logger.info("开始加载[%s]样本和标注",self.name)
-
+        start_time = time.time()
         data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
+
+        logger.debug("使用[%d]个进程，开始并发处理所有的标签数据", args.preprocess_num)
 
         pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
         from functools import partial
@@ -78,11 +80,11 @@ class SequenceData(Sequence):
         pool_outputs = pool.map(func, data_list)
         pool.close()  # no more tasks
         pool.join()  # wrap up current tasks
-        logger.debug("使用[%d]个进程，并发处理完所有的标签数据",conf.PREPROCESS_NUM)
+
 
         self.images_labels =  [item for sublist in pool_outputs for item in sublist]
 
-        logger.info("加载了[%s]样本： [%d]个", self.name, len(self.images_labels))
+        logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.images_labels),(time.time() - start_time))
 
         np.random.shuffle(self.images_labels)
 
