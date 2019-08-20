@@ -71,7 +71,7 @@ class SequenceData(Sequence):
 
         data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
 
-        pool_size = conf.PREPROCESS_NUM # 把进程池数和要分箱的数量搞成一致
+        pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
         from functools import partial
         func = partial(label_utils.process_lines, self.charsets)
         pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)

@@ -191,6 +191,24 @@ model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
 return [images,labels[:,:-1,:]],labels[:,1:,:]
 ```
 
+另外，由于训练的数据量非常大（上百万的样本量），要进行这个预处理很费时间，因此增加了一个参数叫"preprocess_num"，来启动对应数量的进程，同时完成预处理，提高加载速度。
+
+## 训练细节
+
+```python
+    model.fit_generator(
+        generator=train_sequence,
+        steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
+        epochs=args.epochs,
+        workers=args.workers,
+        callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
+        use_multiprocessing=True,
+        validation_data=valid_sequence,
+        validation_steps=args.validation_steps)
+```
+- 一个是generator是自定义的sequence，前面已经详细介绍过了
+- steps_per_epoch默认为
+
 # 跑一跑原作者的例子
 
 作者的代码目前被转移到test/examples目录下了。
