@@ -51,15 +51,16 @@ def train(args):
 
     logger.info("Begin train开始训练：")
 
+    # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
     model.fit_generator(
         generator=train_sequence,
-        steps_per_epoch=len(train_sequence),
+        steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
         epochs=args.epochs,
         workers=args.workers,
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
         use_multiprocessing=True,
         validation_data=valid_sequence,
-        validation_steps=1)
+        validation_steps=args.validation_steps)
 
     logger.info("Train end训练结束!")
 

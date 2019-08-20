@@ -4,13 +4,14 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     echo "调试模式"
     python -m main.train \
     --name=attention_ocr \
-    --epochs=1 \
-    --batch=16 \
+    --epochs=10 \
+    --steps_per_epoch=10 \
+    --batch=8 \
     --learning_rate=0.001 \
-    --validation_steps=100 \
-    --validation_batch=16 \
+    --validation_steps=2  \
+    --validation_batch=8 \
     --workers=2 \
-    --early_stop=2
+    --early_stop=10
     exit
 fi
 
@@ -29,11 +30,12 @@ echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 
 nohup python -m main.train \
     --name=attention_ocr \
-    --epochs=100 \
+    --epochs=200 \
+    --steps_per_epoch=1000 \
     --batch=64 \
     --learning_rate=0.001 \
-    --validation_steps=1000 \
     --validation_batch=64 \
+    --validation_steps=10 \
     --workers=10 \
     --early_stop=10 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &

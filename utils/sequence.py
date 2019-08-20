@@ -20,15 +20,16 @@ class SequenceData(Sequence):
         self.batch_size = batch_size
         self.charsets = label_utils.get_charset(charset_file)
         self.initialize(conf,args)
+        self.start_time = time.time()
 
     # 返回长度，我理解是一个epoch中的总步数
     # 'Denotes the number of batches per epoch'
     def __len__(self):
         return int(math.ceil(len(self.images_labels) / self.batch_size))
 
-    # 即通过索引获取a[0],a[1]这种
+    # 即通过索引获取a[0],a[1]这种,idx是被shuffle后的索引，你获取数据的时候，需要[idx * self.batch_size : (idx + 1) * self.batch_size]
     def __getitem__(self, idx):
-        start_time = time.time()
+
 
         # unzip的结果是 [(1,2,3),(a,b,c)]，注意，里面是个tuple，而不是list，所以用的时候还要list()转化一下
         image_names, label_ids = list(zip(*self.images_labels[
@@ -42,10 +43,10 @@ class SequenceData(Sequence):
         labels = pad_sequences(labels,maxlen=self.conf.MAX_SEQUENCE,padding="post",value=0)
         labels = to_categorical(labels,num_classes=len(self.charsets))
 
-        logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
-                    os.getpid(),
-                    idx,
-                    time.time()-start_time)
+        # logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
+        #             os.getpid(),
+        #             idx,
+        #             time.time()-start_time)
 
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
@@ -57,7 +58,9 @@ class SequenceData(Sequence):
     # 一次epoch后，重新shuffle一下样本
     def on_epoch_end(self):
         np.random.shuffle(self.images_labels)
-        logger.debug("本次Epoch结束，重新shuffle数据")
+        duration = time.time() - self.start_time
+        self.start_time = time.time()
+        logger.debug("本次Epoch结束，耗时[%d]秒，重新shuffle数据",duration)
 
     # 初始加载样本：即每一个文件的路径和对应的识别文字
     # 额外做两件事：
