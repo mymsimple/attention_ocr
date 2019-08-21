@@ -209,6 +209,25 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 - 一个是generator是自定义的sequence，前面已经详细介绍过了
 - steps_per_epoch默认为
 
+# 开发日志
+
+## 8.21 
+
+修正一下bugs:
+
+- 数据加载存在bug，有none数据加入，剔除了他们
+- padding逻辑修正为，如果不到200像素宽，就加**"白色"**来padding，之前是黑色；超过200就resize成200（会导致变形，但也比截取掉强）
+- sequence的on_epoch_end中shuffle动作，仅shuffle indices，而不是之前shuffle整个数据数组
+- 调整了训练的参数，并添加了关键参数的注释
+
+依然存在的问题：
+
+训练过慢，目前看1000个batch下来要13分钟左右，很慢，之前300万的数据大于是5万个batchs，会非常慢，
+所以加入了steps_per_epoch来调整为1000个batch作为一个epochs。
+这样做，会有一些副作用，就是每次只能取1000个batch数据训练，然后就要shuffle整个数据集。
+为何要把epochs缩短，原因是Keras是在每个epochs结束的时候，才会回调诸如validate、early stop、checkpoint等回调。
+目前也只有这个解决方案了。
+
 # 跑一跑原作者的例子
 
 作者的代码目前被转移到test/examples目录下了。

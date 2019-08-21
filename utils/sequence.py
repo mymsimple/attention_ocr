@@ -35,6 +35,7 @@ class SequenceData(Sequence):
             idx * self.batch_size : (idx + 1) * self.batch_size
         ]))
 
+        # 读取图片，高度调整为32，宽度用黑色padding
         images = image_utils.read_and_resize_image(list(image_names),self.conf)
 
         # labels是[nparray([<3770>],[<3770>],[<3770>]),...]，是一个数组，里面是不定长的3370维度的向量,(N,3770),如： (18, 3861)
@@ -46,7 +47,6 @@ class SequenceData(Sequence):
         #             os.getpid(),
         #             idx,
         #             time.time()-start_time)
-
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  doceder验证标签
@@ -56,7 +56,7 @@ class SequenceData(Sequence):
 
     # 一次epoch后，重新shuffle一下样本
     def on_epoch_end(self):
-        np.random.shuffle(self.images_labels)
+        np.random.shuffle(self.indices)
         duration = time.time() - self.start_time
         self.start_time = time.time()
         logger.debug("本次Epoch结束，耗时[%d]秒，重新shuffle数据",duration)

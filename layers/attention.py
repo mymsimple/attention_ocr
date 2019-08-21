@@ -13,15 +13,12 @@ class AttentionLayer(Layer):
     This class implements Bahdanau attention (https://arxiv.org/pdf/1409.0473.pdf).
     There are three sets of weights introduced W_a, U_a, and V_a
      """
-
     def __init__(self, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
-        #self.supports_masking = True # 来，支持掩码
 
-
-    # def __call__(self, inputs, initial_state=None, constants=None, **kwargs):
-    #     if initial_state is None and constants is None:
-    #         return super(AttentionLayer, self).__call__(inputs, **kwargs)
+    def __call__(self, inputs, initial_state=None, constants=None, **kwargs):
+        if initial_state is None and constants is None:
+            return super(AttentionLayer, self).__call__(inputs, **kwargs)
 
     def build(self, input_shape):
         assert isinstance(input_shape, list)
@@ -61,26 +58,18 @@ class AttentionLayer(Layer):
         # decoder_out一个和encoder_out_seq一串，对
         def energy_step(decode_outs, states): # decode_outs(batch,dim)
             decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
-
-
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
-            # print("en_seq_len, en_hidden:",en_seq_len, en_hidden)
             de_hidden = decode_outs.shape[-1]
-
             #  W * h_j
             reshaped_enc_outputs = K.reshape(encoder_out_seq, (-1, en_hidden))
             _p(reshaped_enc_outputs,"reshaped_enc_outputs")
             W_a_dot_s = K.reshape(K.dot(reshaped_enc_outputs, self.W_a), (-1, en_seq_len, en_hidden))
-
             # U * S_t - 1
             U_a_dot_h = K.expand_dims(K.dot(decode_outs, self.U_a), 1)  # <= batch_size, 1, latent_dim
-
             # tanh ( W * h_j + U * S_t-1 + b )
             reshaped_Ws_plus_Uh = K.tanh(K.reshape(W_a_dot_s + U_a_dot_h, (-1, en_hidden)))
-
             # V * tanh ( W * h_j + U * S_t-1 + b )
             e_i = K.reshape(K.dot(reshaped_Ws_plus_Uh, self.V_a), (-1, en_seq_len))
-
             # softmax(e_tj)
             e_i = K.softmax(e_i)
             e_i = _p(e_i,"energy_step:e_i")
