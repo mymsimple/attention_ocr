@@ -220,6 +220,10 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 - sequence的on_epoch_end中shuffle动作，仅shuffle indices，而不是之前shuffle整个数据数组
 - 调整了训练的参数，并添加了关键参数的注释
 
+增加一些新特性：
+
+- 增加了一个加载checkpoint，可以继续训练
+
 依然存在的问题：
 
 训练过慢，目前看1000个batch下来要13分钟左右，很慢，之前300万的数据大于是5万个batchs，会非常慢，

@@ -79,9 +79,7 @@ def model(conf,args):
     # whole model 整个模型
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
     opt = Adam(lr=args.learning_rate)
-    train_model.compile(optimizer=opt,
-                  loss='categorical_crossentropy',
-                  metrics=[accuracy])
+    train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[accuracy])
 
     train_model.summary()
 

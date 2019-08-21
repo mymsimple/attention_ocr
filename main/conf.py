@@ -15,6 +15,10 @@ INPUT_IMAGE_HEIGHT = 32  # 图像归一化的高度
 INPUT_IMAGE_WIDTH = 200  # 最大的图像宽度
 GRU_HIDDEN_SIZE = 64     # GRU隐含层神经元数量
 
+DIR_LOGS="logs"
+DIR_TBOARD="logs/tboard"
+DIR_MODEL="model"
+DIR_CHECKPOINT="model/checkpoint"
 
 # 伐喜欢tensorflow的flags方式，使用朴素的argparse
 # dislike the flags style of tensorflow, instead using argparse

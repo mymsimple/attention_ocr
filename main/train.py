@@ -4,9 +4,10 @@ from utils import util, logger as log,label_utils
 from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from main import conf
 import logging
+from keras import backend as K
+import os
 
 logger = logging.getLogger("Train")
-
 
 def train(args):
     # TF调试代码 for tf debugging：
@@ -34,8 +35,15 @@ def train(args):
                                   batch_size=args.validation_batch)
 
     timestamp = util.timestamp_s()
-    tb_log_name = "logs/tboard/{}".format(timestamp)
-    checkpoint_path = "model/checkpoint/checkpoint-{}.hdf5".format(timestamp)
+    tb_log_name = conf.DIR_TBOARD+"/"+timestamp
+    checkpoint_path = conf.DIR_CHECKPOINT+"/checkpoint-{}.hdf5".format(timestamp)
+
+    # 如果checkpoint文件存在，就加载之
+    _checkpoint_path = util.get_checkpoint(conf.DIR_CHECKPOINT)
+    if os.path.exists(_checkpoint_path):
+        model.load_weights(_checkpoint_path)
+        logger.info("加载checkpoint模型[%s]", _checkpoint_path)
+
     checkpoint = ModelCheckpoint(
         filepath=checkpoint_path,
         monitor='val_accuracy',
@@ -72,4 +80,5 @@ def train(args):
 if __name__ == "__main__":
     log.init()
     args = conf.init_args()
-    train(args)
+    with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
+        train(args)
