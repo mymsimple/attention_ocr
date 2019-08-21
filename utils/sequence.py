@@ -29,9 +29,8 @@ class SequenceData(Sequence):
 
     # 即通过索引获取a[0],a[1]这种,idx是被shuffle后的索引，你获取数据的时候，需要[idx * self.batch_size : (idx + 1) * self.batch_size]
     def __getitem__(self, idx):
-
-
         # unzip的结果是 [(1,2,3),(a,b,c)]，注意，里面是个tuple，而不是list，所以用的时候还要list()转化一下
+        # zip(*xxx）操作是为了解开[(a,b),(a,b),(a,b)]=>[a,a,a][b,b,b]
         image_names, label_ids = list(zip(*self.images_labels[
             idx * self.batch_size : (idx + 1) * self.batch_size
         ]))
@@ -73,16 +72,16 @@ class SequenceData(Sequence):
 
         logger.debug("使用[%d]个进程，开始并发处理所有的标签数据", args.preprocess_num)
 
+        # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
         pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
         from functools import partial
         func = partial(label_utils.process_lines, self.charsets)
         pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
-        pool_outputs = pool.map(func, data_list)
+        pool_outputs = pool.map(func, data_list) # 使用partial工具类，来自动划分这些数据到每个进程中
         pool.close()  # no more tasks
         pool.join()  # wrap up current tasks
 
-
-        self.images_labels =  [item for sublist in pool_outputs for item in sublist]
+        self.images_labels = [item for sublist in pool_outputs for item in sublist]
 
         logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.images_labels),(time.time() - start_time))
 

@@ -78,19 +78,23 @@ def process_lines(charsets,data):
     for d in data:
         # print(d)
         file, label = d
-        result.append(process_line(file,label,charsets))
+        filename, labels_index = process_line(file, label, charsets)
+        if filename is None: continue
+        if labels_index is None: continue
+        result.append((filename,labels_index))
     return result
 
 # 处理每一行数据：data/train/22.png 市平谷区金海
+# 返回的是filename,labels_index
 def process_line(filename,label,charsets):
     if not os.path.exists(filename):
         logger.warning("标签文件[%s]不存在啊", filename)
-        return None
+        return None,None
 
     processed_label = process_unknown_charactors(label, charsets)
     if processed_label is None or len(processed_label) == 0:
         logger.error("解析标签字符串失败，忽略此样本：[%s]", label)
-        return None
+        return None,None
 
     # 前面，后面都加上空格，充当BOS和EOS
     processed_label = CHAR_STX + processed_label + CHAR_ETX
@@ -99,7 +103,7 @@ def process_line(filename,label,charsets):
     # 旧的方法，换成地道的 pad_sequences + to_categorical
     labels_index = convert_labels_to_ids(processed_label, charsets)
     if labels_index is None:
-        return None
+        return None,None
 
     # labels_index = np.vstack(labels_index) # 因为是返回的是数组，所以要变成nparray，从list[(3700)]=>(sequence,3700)
     return filename,labels_index
