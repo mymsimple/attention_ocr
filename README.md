@@ -232,6 +232,26 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 为何要把epochs缩短，原因是Keras是在每个epochs结束的时候，才会回调诸如validate、early stop、checkpoint等回调。
 目前也只有这个解决方案了。
 
+## 8.22
+
+发现一个新问题，在生产环境出现了sequence加载数据卡住的情况，于是经过本地的实验和测试，发现：
+- 不用用多进程方式加载，不知道为何总是卡住，改成multiprocess=False,即使用多线程就好了，[参考](https://stackoverflow.com/questions/54620551/confusion-about-multiprocessing-and-workers-in-keras-fit-generator-with-window)
+- on_epoch_end确实是所有的样本都轮完了，才回调一次，而，steps_per_epoch改变的是多久callback回调一次，这个可以调的更小一些，两者没关系
+- 修改了CNN网络中的batch normalization部分，之前的方法不对
+- 解决了之前预加载checkpoint模型无效的bug，之前的model.load_weights无效，采用tensorflow.python.kears.models.load_model来加载
+- 自定义了各类自定义对象，替换了默认的accuracy，以及各类自定义layer，否则，load_model会报错：
+```python
+     model = load_model(_checkpoint_path,
+            custom_objects={
+             'words_accuracy': _model.words_accuracy,
+             'Conv':Conv,
+             'AttentionLayer':AttentionLayer})
+```
+- 另外装在checkpoint的时候，遇到一个警告："WARNING:tensorflow:Layer decoder_gru was passed non-serializable keyword arguments: {'initial_state': [<tf.Tensor 'concatenate_1/concat:0' shape=(?, 128) dtype=float32>]}. They will not be included in the serialized model (and thus will be missing at deserialization time)."，
+[网上](https://github.com/keras-team/keras/issues/9914)也有人遇到，但是貌似也没啥解决办法，也不太了解影响，所以我也暂时忽略了。
+
+另外，训练收敛速度实在是太慢了
+
 # 跑一跑原作者的例子
 
 作者的代码目前被转移到test/examples目录下了。

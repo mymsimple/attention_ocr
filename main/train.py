@@ -1,4 +1,6 @@
 from layers import model as _model
+from layers.conv import Conv
+from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
 from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
@@ -6,6 +8,7 @@ from main import conf
 import logging
 from keras import backend as K
 import os
+from tensorflow.python.keras.models import load_model
 
 logger = logging.getLogger("Train")
 
@@ -40,19 +43,23 @@ def train(args):
 
     # 如果checkpoint文件存在，就加载之
     _checkpoint_path = util.get_checkpoint(conf.DIR_CHECKPOINT)
-    if os.path.exists(_checkpoint_path):
-        model.load_weights(_checkpoint_path)
+    if _checkpoint_path is not None:
+        model = load_model(_checkpoint_path,
+            custom_objects={
+                'words_accuracy': _model.words_accuracy,
+                'Conv':Conv,
+                'AttentionLayer':AttentionLayer})
         logger.info("加载checkpoint模型[%s]", _checkpoint_path)
 
     checkpoint = ModelCheckpoint(
         filepath=checkpoint_path,
-        monitor='val_accuracy',
+        monitor='words_accuracy',
         verbose=1,
         save_best_only=True,
         mode='max')
 
     early_stop = EarlyStopping(
-        monitor='val_accuracy',
+        monitor='words_accuracy',
         patience=args.early_stop,
         verbose=1,
         mode='max')
@@ -66,13 +73,13 @@ def train(args):
         epochs=args.epochs,
         workers=args.workers,
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
-        use_multiprocessing=True,
+        use_multiprocessing=False,
         validation_data=valid_sequence,
         validation_steps=args.validation_steps)
 
     logger.info("Train end训练结束!")
 
-    model_path = "model/ocr-attention-{}.hdf5".format(util.timestamp_s())
+    model_path = conf.DIR_MODEL+"/ocr-attention-{}.hdf5".format(util.timestamp_s())
     model.save(model_path)
     logger.info("Save model保存训练后的模型到：%s", model_path)
 

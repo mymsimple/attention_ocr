@@ -5,7 +5,7 @@
 # 原因是不能用keras自带的vgg19+keras自带的bidirectional，靠，肯定是版本不兼容的问题
 # 切换到下面的就好了，之前还是试验了用tf的bidirectional+keras的vgg19，也是不行，报错：AttributeError: 'Node' object has no attribute 'output_masks'
 # 靠谱的组合是：tf的bidirectional+tf的vgg19
-from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,ZeroPadding1D
+from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
 from layers import conv
@@ -32,7 +32,10 @@ conv = Conv()
 
 
 # y_pred is [batch,seq,charset_size]
-def accuracy(y_true, y_pred):
+# 这个函数的细节，测试了一下，参考：test/test_accuracy.py
+# 不过这个是对一个batch的，对于validate中的多个batches，是否还会在多个batches上平均，
+# 这个细节就不太了解了....?
+def words_accuracy(y_true, y_pred):
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
     correct_pred = tf.equal(max_idx_p, max_idx_l)
@@ -73,13 +76,18 @@ def model(conf,args):
 
     # 5.Dense layer output layer 输出层
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
+
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_pred = dense_time(decoder_concat_input)
 
     # whole model 整个模型
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
     opt = Adam(lr=args.learning_rate)
-    train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[accuracy])
+
+    # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？
+    # 这个疑惑在这个例子中看到答案：https://keras.io/examples/lstm_seq2seq/
+    # 我猜，keras的代码中应该是做了判断，如果是多个categorical_crossentropy，应该会tf.reduce_mean()一下吧。。。
+    train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[words_accuracy])
 
     train_model.summary()
 

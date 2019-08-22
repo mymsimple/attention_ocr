@@ -11,7 +11,7 @@ def timestamp_s():
 def get_checkpoint(dir):
     list = os.listdir(dir)
     if len(list)==0:
-        logger.info("没有checkpoint文件")
+        logger.info("找不到最新的checkpoint文件")
         return None
 
     list.sort(key=lambda fn:os.path.getmtime( os.path.join(dir,fn) ))
