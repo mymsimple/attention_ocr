@@ -42,14 +42,20 @@ def train(args):
     checkpoint_path = conf.DIR_CHECKPOINT+"/checkpoint-{}.hdf5".format(timestamp)
 
     # 如果checkpoint文件存在，就加载之
-    _checkpoint_path = util.get_checkpoint(conf.DIR_CHECKPOINT)
-    if _checkpoint_path is not None:
-        model = load_model(_checkpoint_path,
-            custom_objects={
-                'words_accuracy': _model.words_accuracy,
-                'Conv':Conv,
-                'AttentionLayer':AttentionLayer})
-        logger.info("加载checkpoint模型[%s]", _checkpoint_path)
+    if args.retrain:
+        logger.info("重新开始训练....")
+    else:
+        logger.info("基于之前的checkpoint训练...")
+        _checkpoint_path = util.get_checkpoint(conf.DIR_CHECKPOINT)
+        if _checkpoint_path is not None:
+            model = load_model(_checkpoint_path,
+                custom_objects={
+                    'words_accuracy': _model.words_accuracy,
+                    'Conv':Conv,
+                    'AttentionLayer':AttentionLayer})
+            logger.info("加载checkpoint模型[%s]", _checkpoint_path)
+        else:
+            logger.warning("找不到任何checkpoint，重新开始训练")
 
     checkpoint = ModelCheckpoint(
         filepath=checkpoint_path,

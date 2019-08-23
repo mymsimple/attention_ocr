@@ -7,6 +7,7 @@
 #    --batch=64 \
 #    --learning_rate=0.001 \
 #    --validation_batch=64 \
+#    --retrain=True \               # 从新训练，还是从checkpoint中继续训练
 #    --validation_steps=10 \        # 这个是说你测试几个批次，steps这个词不好听，应该是batchs，实际上可以算出来，共测试64x10=640个样本
 #    --workers=10 \
 #    --preprocess_num=100 \
@@ -49,6 +50,7 @@ nohup python -m main.train \
     --epochs=5000 \
     --steps_per_epoch=1000 \
     --batch=64 \
+    --retrain=True \
     --learning_rate=0.001 \
     --validation_batch=64 \
     --validation_steps=10 \
