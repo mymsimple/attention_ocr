@@ -141,6 +141,7 @@ class AttentionLayer(Layer):
         )
         c_outputs = _p(c_outputs,"注意力c输出：：：：")
 
+        # 输出的是注意力的向量(batch,图像seq,)，
         return c_outputs, e_outputs
 
     def compute_output_shape(self, input_shape):
