@@ -23,7 +23,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     fi
 
     echo "调试模式"
-    python -m  main.train \
+    python -m main.train \
     --name=attention_ocr \
     --epochs=100 \
     --steps_per_epoch=5 \
@@ -34,12 +34,13 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     --workers=3 \
     --preprocess_num=5 \
     --early_stop=100
-    exit
 
     if [ "$1" == "debug" ]; then
         # 恢复源文件，防止git提交
         sed -i '1d' main/train.py
     fi
+
+    exit
 fi
 
 if [ "$1" = "stop" ]; then
