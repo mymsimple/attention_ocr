@@ -2,10 +2,10 @@ import tensorflow as tf
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
 
-def _p(t,name):
-    return t
-    #print("调试计算图定义："+name, t)
-    #return tf.Print(t,[tf.shape(t)],name)
+from utils.logger import _p_shape,_p
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
 class AttentionLayer(Layer):
@@ -20,9 +20,14 @@ class AttentionLayer(Layer):
         if initial_state is None and constants is None:
             return super(AttentionLayer, self).__call__(inputs, **kwargs)
 
-    def build(self, input_shape):
+    # input_shape是输入的张量的shape，他应该和你的隐含层计算后，输出
+    # attn_out, attn_states = attn_layer([encoder_out, decoder_out])#[(N,512,seq),(N,3770)]
+    def build(self, input_shape): # input_shape = [(N,512,Seq),(N,3770,Seq)]
         assert isinstance(input_shape, list)
         # Create a trainable weight variable for this layer.
+        logger.debug("Attention build时候，input_shape为:%r",input_shape)
+        # input_shape:[TensorShape([Dimension(None), Dimension(50),   Dimension(512)]),
+        #              TensorShape([Dimension(None), Dimension(None), Dimension(512)])]
 
         self.W_a = self.add_weight(name='W_a',
                                    shape=tf.TensorShape((input_shape[0][2], input_shape[0][2])),
@@ -36,6 +41,9 @@ class AttentionLayer(Layer):
                                    shape=tf.TensorShape((input_shape[0][2], 1)),
                                    initializer='uniform',
                                    trainable=True)
+        logger.debug("Attention build时候，W shape为:%r", self.W_a.shape)
+        logger.debug("Attention build时候，U shape为:%r", self.U_a.shape)
+        logger.debug("Attention build时候，V shape为:%r", self.V_a.shape)
 
         super(AttentionLayer, self).build(input_shape)  # Be sure to call this at the end
 
@@ -47,7 +55,8 @@ class AttentionLayer(Layer):
         # 注意，encoder_out_seq是一个数组，长度是seq；decoder_out_seq是一个输出。
         encoder_out_seq, decoder_out_seq = inputs
 
-        encoder_out_seq = _p(encoder_out_seq, "编码器隐含层输出")
+        encoder_out_seq = _p_shape(encoder_out_seq, "注意力调用：入参编码器输出序列：encoder_out_seq")
+        decoder_out_seq = _p_shape(decoder_out_seq, "注意力调用：入参解码器输出序列：decoder_out_seq")
 
         # 实现了能量函数，e_tj=V * tanh ( W * h_j + U * S_t-1 + b )
         # inputs,我理解就是所有的h_j，错！我之前理解错了，这个参数是指某个时刻t，对应的输入！不是所有，是某个时刻的输入。
@@ -121,25 +130,29 @@ class AttentionLayer(Layer):
         # print("encoder_out_seq.shape:",shape)
         # shape[1]是seq，序列长度
         fake_state_e = create_inital_state(encoder_out_seq,shape[1])# encoder_out_seq.shape[1]) ， fake_state_e (batch,enc_seq_len)
-        fake_state_e = _p(fake_state_e, "fake_state_e")
+        fake_state_e = _p_shape(fake_state_e, "fake_state_e")
 
         # 输出是一个e的序列，是对一个时刻而言的
         ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, e_outputs, _ = K.rnn(
-            energy_step, decoder_out_seq, [fake_state_e],# decoder_out_seq是一个序列，不是一个单个值
+            step_function=energy_step,
+            inputs=decoder_out_seq,
+            initial_states=[fake_state_e],# decoder_out_seq是一个序列，不是一个单个值
         )
 
-        e_outputs = _p(e_outputs,"能量函数e输出：：：：")
+        e_outputs = _p_shape(e_outputs,"能量函数e输出：：：：")
         # shape[-1]是encoder的隐含层
         fake_state_c = create_inital_state(encoder_out_seq,encoder_out_seq.shape[-1])  #
-        fake_state_c = _p(fake_state_c, "fake_state_c")
+        fake_state_c = _p_shape(fake_state_c, "fake_state_c")
         # print("e_outputs:", e_outputs)
 
         ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
-            context_step, e_outputs, [fake_state_c],
+            step_function=context_step,
+            inputs=e_outputs,
+            initial_states=[fake_state_c],
         )
-        c_outputs = _p(c_outputs,"注意力c输出：：：：")
+        c_outputs = _p_shape(c_outputs,"注意力c输出：：：：")
 
         # 输出的是注意力的向量(batch,图像seq,)，
         return c_outputs, e_outputs

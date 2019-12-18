@@ -33,9 +33,9 @@ def get_charset(charset_file):
     charset = [ch.strip("\n") for ch in charset]
     charset = "".join(charset)
     charset = list(charset)
-    charset.insert(0, CHAR_ETX)# ETX end of text
-    charset.insert(0, CHAR_STX)# STX start of text
-    charset.insert(0, CHAR_NULL)# NULL
+    charset.insert(0, CHAR_ETX)# ETX end of text,index=2
+    charset.insert(0, CHAR_STX)# STX start of text,index=1
+    charset.insert(0, CHAR_NULL)# NULL index=0
     logger.info("词表插入了 BLANK:padding用, STX:文本开始, ETX:文本结束")
     return charset
 
@@ -52,7 +52,7 @@ def caculate_accuracy(preds,labels):
 # >data/train/23.png 江中路53
 # bin_num:分箱个数
 def read_data_file(label_file_name, process_num):
-    f = open(label_file_name, 'r')
+    f = open(label_file_name, 'r',encoding="utf-8")
     data = []
     for line in f:
         filename , _ , label = line[:-1].partition(' ') # partition函数只读取第一次出现的标志，分为左右两个部分,[:-1]去掉回车
@@ -62,6 +62,7 @@ def read_data_file(label_file_name, process_num):
 
     logger.debug("从[%s]中读取了所有原始数据，一共[%d]行",label_file_name,len(data))
 
+    # chunks函数用于分箱
     def chunks(l, step):
         for i in range(0, len(l), step):
             yield l[i:i + step]

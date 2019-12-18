@@ -34,7 +34,7 @@ def pred(args):
 
     # 开始是STX
     from utils.label_utils import convert_to_id
-    decoder_index = convert_to_id([conf.CHAR_ETX], charset)
+    decoder_index = convert_to_id([conf.CHAR_STX], charset)
     decoder_state = decoder_init_state
 
     result = ""

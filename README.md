@@ -250,7 +250,9 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 - 另外装在checkpoint的时候，遇到一个警告："WARNING:tensorflow:Layer decoder_gru was passed non-serializable keyword arguments: {'initial_state': [<tf.Tensor 'concatenate_1/concat:0' shape=(?, 128) dtype=float32>]}. They will not be included in the serialized model (and thus will be missing at deserialization time)."，
 [网上](https://github.com/keras-team/keras/issues/9914)也有人遇到，但是貌似也没啥解决办法，也不太了解影响，所以我也暂时忽略了。
 
-另外，训练收敛速度实在是太慢了
+## 8.23
+- 增大了GRU神经元数量64=>512
+- 
 
 # 跑一跑原作者的例子
 

@@ -9,6 +9,10 @@ def timestamp_s():
 
 
 def get_checkpoint(dir):
+    if not os.path.exists(dir):
+        logger.info("找不到最新的checkpoint文件")
+        return None
+
     list = os.listdir(dir)
     if len(list)==0:
         logger.info("找不到最新的checkpoint文件")

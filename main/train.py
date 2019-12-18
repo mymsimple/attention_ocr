@@ -7,7 +7,6 @@ from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelChe
 from main import conf
 import logging
 from keras import backend as K
-import os
 from tensorflow.python.keras.models import load_model
 
 logger = logging.getLogger("Train")

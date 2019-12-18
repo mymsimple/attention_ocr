@@ -53,7 +53,7 @@ class SequenceData(Sequence):
         #             idx,
         #             time.time()-start_time)
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
-        # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
+        # labels[:,:-1,:]  STX,A,B,C,D  encoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  doceder验证标签
         # logger.debug("加载批次数据：%r",images.shape)
 
@@ -75,12 +75,12 @@ class SequenceData(Sequence):
         start_time = time.time()
         data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
 
-        logger.debug("使用[%d]个进程，开始并发处理所有的标签数据", args.preprocess_num)
+        logger.debug("使用[%d]个进程，开始并发处理所有的[%d]行标签数据", args.preprocess_num,len(data_list))
 
         # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
         pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
         from functools import partial
-        func = partial(label_utils.process_lines, self.charsets)
+        func = partial(label_utils.process_lines, self.charsets) #  函数的功能就是：把一个函数的某些参数给固定住，返回一个新的函数：http://funhacks.net/explore-python/Functional/partial.html
         pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
         pool_outputs = pool.map(func, data_list) # 使用partial工具类，来自动划分这些数据到每个进程中
         pool.close()  # no more tasks

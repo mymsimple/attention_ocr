@@ -63,13 +63,21 @@ def model(conf,args):
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
+
     # masked_decoder_inputs = Masking(conf.MASK_VALUE)(decoder_inputs)
-    decoder_gru = GRU(conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
+
+    # GRU的units=GRU_HIDDEN_SIZE*2=512，是解码器GRU输出的维度，至于3770是之后，在做一个全连接才可以得到的
+    # units指的是多少个隐含神经元，这个数量要和前面接的Bi-LSTM一致(他是512),这样，才可以接受前面的Bi-LSTM的输出作为他的初始状态输入
+    decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
 
     # 4.Attention layer注意力层
     attn_layer = AttentionLayer(name='attention_layer')
-    attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+
+    # attention层的输入是编码器的输出，和，解码器的输出，他俩的输出是一致的，都是512
+    # encoder_out shape=(?, 50, 512) , decoder_out shape=(?, ?, 512)
+    logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)
+    attn_out, attn_states = attn_layer([encoder_out, decoder_out])#[(N,512,seq),(N,3770)]
 
     # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat123_layer')([decoder_out, attn_out])
