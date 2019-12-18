@@ -16,8 +16,14 @@
 echo "开始训练"
 
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
+
+    if [ "$1" == "debug" ]; then
+        echo "_/_/_/_/_/_/  启动PDB调试模式  _/_/_/_/_/_/"
+        sed -i '1 i\import pdb; pdb.set_trace()'
+    fi
+
     echo "调试模式"
-    python -m pdb main/train.py \
+    python -m  main.train \
     --name=attention_ocr \
     --epochs=100 \
     --steps_per_epoch=5 \
