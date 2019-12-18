@@ -17,7 +17,7 @@ echo "开始训练"
 
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     echo "调试模式"
-    python -m main.train \
+    python -m pdb main.train \
     --name=attention_ocr \
     --epochs=100 \
     --steps_per_epoch=5 \
