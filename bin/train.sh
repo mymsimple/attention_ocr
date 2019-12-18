@@ -19,7 +19,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
 
     if [ "$1" == "debug" ]; then
         echo "_/_/_/_/_/_/  启动PDB调试模式  _/_/_/_/_/_/"
-        sed -i '1 i\import pdb; pdb.set_trace()'
+        sed -i '1i\import pdb; pdb.set_trace()\n' main/train.py
     fi
 
     echo "调试模式"
@@ -35,6 +35,11 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     --preprocess_num=5 \
     --early_stop=100
     exit
+
+    if [ "$1" == "debug" ]; then
+        # 恢复源文件，防止git提交
+        sed -i '1d' main/train.py
+    fi
 fi
 
 if [ "$1" = "stop" ]; then
