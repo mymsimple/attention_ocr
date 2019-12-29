@@ -76,35 +76,35 @@ class Conv(Layer):
 
         # Block 2
         self.layers.append(Conv2D(128, (3, 3), padding='same', name='block2_conv1'))
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         # self.layers.append(BatchNormalization())
         self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')) #1/2
 
         # Block 3
         self.layers.append(Conv2D(256, (3, 3), padding='same', name='block3_conv1'))
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         # self.layers.append(BatchNormalization())
 
         # Block 4
         self.layers.append(Conv2D(256, (3, 3), padding='same', name='block4_conv1'))
         # self.layers.append(BatchNormalization())
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')) # 1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 5
         self.layers.append(Conv2D(512, (3, 3), padding='same', name='block5_conv1'))
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         self.layers.append(BatchNormalization())
 
         # Block 6
         self.layers.append(Conv2D(512, (3, 3), padding='same', name='block6_conv1'))
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         self.layers.append(BatchNormalization())
         self.layers.append(MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')) #1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 7
         self.layers.append(Conv2D(512, (2, 2), strides=[2, 1], padding='same', name='block7_conv1')) #1/2
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
         self.layers.append(Lambda(self.squeeze_wrapper))
