@@ -1,5 +1,5 @@
 from tensorflow.python.keras.layers import Conv2D
-from tensorflow.python.keras.layers import ReLU
+from tensorflow.python.keras.layers import LeakyReLU
 from tensorflow.python.keras.layers import MaxPooling2D
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import Lambda
@@ -70,7 +70,7 @@ class Conv(Layer):
         self.layers = []
         # Block 1
         self.layers.append(Conv2D(64, (3, 3), padding='same', name='block1_conv1'))
-        self.layers.append(ReLU())
+        self.layers.append(LeakyReLU())
         # self.layers.append(BatchNormalization())
         self.layers.append(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')) #1/2
 
