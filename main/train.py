@@ -24,14 +24,14 @@ def train(args):
     model, _, _ = _model.model(conf, args)
 
     train_sequence = SequenceData(name="训练",
-                                  label_file="data/train.txt",
-                                  charset_file="data/charset.txt",
+                                  label_file=args.train_label_file,
+                                  charset_file=conf.CHARSET,
                                   conf=conf,
                                   args=args,
                                   batch_size=args.batch)
     valid_sequence = SequenceData(name="验证",
-                                  label_file="data/validate.txt",
-                                  charset_file="data/charset.txt",
+                                  label_file=args.validate_label_file,
+                                  charset_file=conf.CHARSET,
                                   conf=conf,
                                   args=args,
                                   batch_size=args.validation_batch)

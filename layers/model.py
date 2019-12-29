@@ -58,7 +58,11 @@ def model(conf,args):
     # conv_output_mask = Masking(conf.MASK_VALUE)(conv_output)
 
     # 2.Encoder Bi-GRU编码器
-    encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,return_sequences=True,return_state=True,name='encoder_gru'),name='bidirectional_encoder')
+    encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
+                                       return_sequences=True,
+                                       return_state=True,
+                                       name='encoder_gru'),
+                                   name='bidirectional_encoder')
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output)
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
@@ -86,10 +90,10 @@ def model(conf,args):
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
 
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
-    decoder_pred = dense_time(decoder_concat_input)
+    decoder_prob = dense_time(decoder_concat_input)
 
     # whole model 整个模型
-    train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
+    train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_prob)
     opt = Adam(lr=args.learning_rate)
 
     # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？

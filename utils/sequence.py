@@ -43,9 +43,11 @@ class SequenceData(Sequence):
         # 读取图片，高度调整为32，宽度用黑色padding
         images = image_utils.read_and_resize_image(list(image_names),self.conf)
 
-        # labels是[nparray([<3770>],[<3770>],[<3770>]),...]，是一个数组，里面是不定长的3370维度的向量,(N,3770),如： (18, 3861)
+        # labels是[nparray([<3773>],[<3773>],[<3773>]),...]，是一个数组，里面是不定长的3370维度的向量,(N,3770),如： (18, 3861)
         labels = list(label_ids)
         labels = pad_sequences(labels,maxlen=self.conf.MAX_SEQUENCE,padding="post",value=0)
+
+        #to_categorical之后的shape： [N,time_sequence(字符串长度),3773]
         labels = to_categorical(labels,num_classes=len(self.charsets))
 
         # logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
@@ -53,10 +55,11 @@ class SequenceData(Sequence):
         #             idx,
         #             time.time()-start_time)
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
-        # labels[:,:-1,:]  STX,A,B,C,D  encoder输入标签
-        # labels[:,1: ,:]  A,B,C,D,ETX  doceder验证标签
+        # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
+        # labels[:,1: ,:]  A,B,C,D,ETX  decoder验证标签
         # logger.debug("加载批次数据：%r",images.shape)
-
+        # logger.debug("Decoder输入：%r", labels[:,:-1,:])
+        # logger.debug("Decoder标签：%r", labels[:,1:,:])
         return [images,labels[:,:-1,:]],labels[:,1:,:]
 
     # 一次epoch后，重新shuffle一下样本

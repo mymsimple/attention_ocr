@@ -25,6 +25,8 @@ DIR_CHECKPOINT="model/checkpoint"
 def init_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name" ,default="attention_ocr",type=str,help="")
+    parser.add_argument("--train_label_file",    default="data/train.txt",    type=str, help="")
+    parser.add_argument("--validate_label_file", default="data/validate.txt", type=str, help="")
     parser.add_argument("--epochs" ,default=1,type=int,help="")
     parser.add_argument("--steps_per_epoch", default=1,type=int,help="")
     parser.add_argument("--batch" , default=1,type=int,help="")

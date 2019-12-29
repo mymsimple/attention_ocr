@@ -37,7 +37,7 @@ class AttentionLayer(Layer):
                                    shape=tf.TensorShape((input_shape[1][2], input_shape[0][2])),
                                    initializer='uniform',
                                    trainable=True)
-        self.V_a = self.add_weight(name='V_a',
+        self.V_a = self.add_weight(name='V_a', # [512,1]
                                    shape=tf.TensorShape((input_shape[0][2], 1)),
                                    initializer='uniform',
                                    trainable=True)
@@ -67,17 +67,23 @@ class AttentionLayer(Layer):
         # decoder_out一个和encoder_out_seq一串，对
         def energy_step(decode_outs, states): # decode_outs(batch,dim)
             decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
-            en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
+            # decoder_seq [b,30,512]
+            en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2] # 30, 512
             de_hidden = decode_outs.shape[-1]
             #  W * h_j
-            reshaped_enc_outputs = K.reshape(encoder_out_seq, (-1, en_hidden))
+            reshaped_enc_outputs = K.reshape(encoder_out_seq, (-1, en_hidden)) #[b,64,512]=> [b*64,512]
             _p(reshaped_enc_outputs,"reshaped_enc_outputs")
+
+            # W_a[512x512],reshaped_enc_outputs[b*64,512] => [b*64,512] => [b,64,512]
             W_a_dot_s = K.reshape(K.dot(reshaped_enc_outputs, self.W_a), (-1, en_seq_len, en_hidden))
-            # U * S_t - 1
-            U_a_dot_h = K.expand_dims(K.dot(decode_outs, self.U_a), 1)  # <= batch_size, 1, latent_dim
-            # tanh ( W * h_j + U * S_t-1 + b )
+            # U * S_t - 1,decode_outs[b,512],U_a[512,512] => [b,512]    => [b,1,512]
+            U_a_dot_h = K.expand_dims(K.dot(decode_outs, self.U_a), axis=1)  # <= batch_size, 1, latent_dim
+
+            # 这个细节很变态，其实就是完成了decoder的输出复制time(64)个，和encoder的输出【64,512】，相加的过程
+
+            # tanh ( W * h_j + U * S_t-1 + b ),[b,64,512] = [b*64,512]
             reshaped_Ws_plus_Uh = K.tanh(K.reshape(W_a_dot_s + U_a_dot_h, (-1, en_hidden)))
-            # V * tanh ( W * h_j + U * S_t-1 + b )
+            # V * tanh ( W * h_j + U * S_t-1 + b ), [b*64,512]*[512,1] => [b*64,1] => [b,64]
             e_i = K.reshape(K.dot(reshaped_Ws_plus_Uh, self.V_a), (-1, en_seq_len))
             # softmax(e_tj)
             e_i = K.softmax(e_i)
@@ -92,22 +98,27 @@ class AttentionLayer(Layer):
         # "step_do 这个函数，这个函数接受两个输入：step_in 和 states。
         #   其中 step_in 是一个 (batch_size, input_dim) 的张量，
         #   代表当前时刻的样本 xt，而 states 是一个 list，代表 yt−1 及一些中间变量。"
+        # e 是30次中的一次，他是一个64维度的概率向量
         def context_step(e, states): # e (batch,dim),其实每个输入就是一个e
             e = _p(e,"context_step:e")
             states = _p(states,"context_step:states")
+            # encoder_out_seq[b,64,512] * e[64,1]
+            # dot是矩阵相乘，*是对应位置元素相乘
+            # [b,64,512] * e[64,1]shape不一样，居然也可以乘，我试了，没问题
+            # 其实，就是实现了encoder ouput根据softmax概率分布，加权求和
             c_i = K.sum(encoder_out_seq * K.expand_dims(e, -1), axis=1)
             c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")
             return c_i, [c_i]
 
-        #    (batch_size, enc_seq_len, latent_dim)
+        #    (batch_size, enc_seq_len, latent_dim) (b,64,512)
         # => (batch_size, hidden_size)
         # 这个函数是，作为GRU的初始状态值，
-        def create_inital_state(inputs, hidden_size):
+        def create_inital_state(inputs, hidden_size):# hidden_size=64
             # print("inputs",inputs)
             # print("hidden_size",hidden_size)
             # print("type(hidden_size)", type(hidden_size))
             # We are not using initial states, but need to pass something to K.rnn funciton
-            fake_state = K.zeros_like(inputs)  # <= (batch_size, enc_seq_len, latent_dim)
+            fake_state = K.zeros_like(inputs)  # [b,64,512]<= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
             # print(fake_state)
@@ -115,7 +126,7 @@ class AttentionLayer(Layer):
             # print(tf.shape(fake_state))
             # print("hidden_size:",hidden_size)
 
-            fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim)
+            fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim) (b,latent_dim=64)
             return fake_state
 
         # encoder_out_seq = (batch_size, enc_seq_len, latent_dim)
@@ -128,17 +139,19 @@ class AttentionLayer(Layer):
         # eij(i不变,j是一个encoder的h下标），灌入到一个新的rnn中，让他计算出对应的输出，这个才是真正的Decoder！！！
         shape = encoder_out_seq.shape.as_list()
         # print("encoder_out_seq.shape:",shape)
-        # shape[1]是seq，序列长度
+        # shape[1]是seq=64，序列长度
         fake_state_e = create_inital_state(encoder_out_seq,shape[1])# encoder_out_seq.shape[1]) ， fake_state_e (batch,enc_seq_len)
         fake_state_e = _p_shape(fake_state_e, "fake_state_e")
 
         # 输出是一个e的序列，是对一个时刻而言的
         ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
+        # 这个步骤是做了30次(decoder，也就是字符串长度），每次得到一个64维度（encoder的time_sequence）的概率向量
         last_out, e_outputs, _ = K.rnn(
             step_function=energy_step,
             inputs=decoder_out_seq,
-            initial_states=[fake_state_e],# decoder_out_seq是一个序列，不是一个单个值
+            initial_states=[fake_state_e],# (bx64)decoder_out_seq是一个序列，不是一个单个值
         )
+        # e_outputs [30,64]
 
         e_outputs = _p_shape(e_outputs,"能量函数e输出：：：：")
         # shape[-1]是encoder的隐含层
@@ -152,6 +165,7 @@ class AttentionLayer(Layer):
             inputs=e_outputs,
             initial_states=[fake_state_c],
         )
+        #c_outputs [b,64,512]
         c_outputs = _p_shape(c_outputs,"注意力c输出：：：：")
 
         # 输出的是注意力的向量(batch,图像seq,)，
