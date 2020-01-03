@@ -59,6 +59,22 @@ def read_data_file(label_file_name, process_num):
         # print(filename,":",label)
         data.append((filename,label))
     f.close()
+    return data
+
+# !!! 此方法已废弃，加载目前采用fit_generator的multiprocess=True+Work=10的方式，不用自己去创建多进程了
+# 从文件中读取样本路径和标签值，并放入分箱中，为了是每个箱子多进程加载
+# >data/train/21.png )beiji
+# >data/train/22.png 市平谷区金海
+# >data/train/23.png 江中路53
+# bin_num:分箱个数
+def read_data_file_bucket(label_file_name, process_num):
+    f = open(label_file_name, 'r',encoding="utf-8")
+    data = []
+    for line in f:
+        filename , _ , label = line[:-1].partition(' ') # partition函数只读取第一次出现的标志，分为左右两个部分,[:-1]去掉回车
+        # print(filename,":",label)
+        data.append((filename,label))
+    f.close()
 
     logger.debug("从[%s]中读取了所有原始数据，一共[%d]行",label_file_name,len(data))
 

@@ -5,9 +5,13 @@ import logging,math,os
 import numpy as np
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 from tensorflow.python.keras.utils import to_categorical
+import multiprocessing
 import time
 
 logger = logging.getLogger("SequenceData")
+
+
+# !!!! 此类已废弃，原来sequence配合fit_generator就可以多进程加载，我多此一举了，直接用sequence的正确姿势
 
 
 # 自定义的数据加载器
@@ -27,20 +31,18 @@ class SequenceData(Sequence):
     # 返回长度，我理解是一个epoch中的总步数
     # 'Denotes the number of batches per epoch'
     def __len__(self):
-        return int(math.ceil(len(self.data_list) / self.batch_size))
+        return int(math.ceil(len(self.images_labels) / self.batch_size))
 
     # 即通过索引获取a[0],a[1]这种,idx是被shuffle后的索引，你获取数据的时候，需要[idx * self.batch_size : (idx + 1) * self.batch_size]
     # 2019.12.30,piginzoo，
     def __getitem__(self, idx):
-        start_time = time.time()
-        batch_data_list = self.data_list[ idx * self.batch_size : (idx + 1) * self.batch_size]
-
-        images_labelids = label_utils.process_lines(self.charsets,batch_data_list)
 
         # print(self.name,"Sequence PID:", os.getpid(),",idx=",idx)
         # unzip的结果是 [(1,2,3),(a,b,c)]，注意，里面是个tuple，而不是list，所以用的时候还要list()转化一下
         # zip(*xxx）操作是为了解开[(a,b),(a,b),(a,b)]=>[a,a,a][b,b,b]
-        image_names, label_ids = list(zip(*images_labelids))
+        image_names, label_ids = list(zip(*self.images_labels[
+            idx * self.batch_size : (idx + 1) * self.batch_size
+        ]))
 
         # 读取图片，高度调整为32，宽度用黑色padding
         images = image_utils.read_and_resize_image(list(image_names),self.conf)
@@ -52,11 +54,10 @@ class SequenceData(Sequence):
         #to_categorical之后的shape： [N,time_sequence(字符串长度),3773]
         labels = to_categorical(labels,num_classes=len(self.charsets))
 
-        logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
-                    os.getpid(),
-                    idx,
-                    time.time()-start_time)
-
+        # logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
+        #             os.getpid(),
+        #             idx,
+        #             time.time()-start_time)
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  decoder验证标签
@@ -79,25 +80,24 @@ class SequenceData(Sequence):
     def initialize(self,conf,args):
         logger.info("开始加载[%s]样本和标注",self.name)
         start_time = time.time()
-        self.data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
+        data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
 
-        logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.data_list),(time.time() - start_time))
+        logger.debug("使用[%d]个进程，开始并发处理所有的[%d]行标签数据", args.preprocess_num,len(data_list))
 
-        # logger.debug("使用[%d]个进程，开始并发处理所有的[%d]行标签数据", args.preprocess_num,len(data_list))
-        # # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
-        # pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
-        # from functools import partial
-        # func = partial(label_utils.process_lines, self.charsets) #  函数的功能就是：把一个函数的某些参数给固定住，返回一个新的函数：http://funhacks.net/explore-python/Functional/partial.html
-        # pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
-        # pool_outputs = pool.map(func, data_list) # 使用partial工具类，来自动划分这些数据到每个进程中
-        # pool.close()  # no more tasks
-        # pool.join()  # wrap up current tasks
-        #
-        # self.images_labels = [item for sublist in pool_outputs for item in sublist]
-        #
-        # logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.images_labels),(time.time() - start_time))
-        #
-        # np.random.shuffle(self.images_labels)
-        #
-        # logger.info("Shuffle[%s]样本数据", self.name)
+        # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
+        pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
+        from functools import partial
+        func = partial(label_utils.process_lines, self.charsets) #  函数的功能就是：把一个函数的某些参数给固定住，返回一个新的函数：http://funhacks.net/explore-python/Functional/partial.html
+        pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
+        pool_outputs = pool.map(func, data_list) # 使用partial工具类，来自动划分这些数据到每个进程中
+        pool.close()  # no more tasks
+        pool.join()  # wrap up current tasks
+
+        self.images_labels = [item for sublist in pool_outputs for item in sublist]
+
+        logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.images_labels),(time.time() - start_time))
+
+        np.random.shuffle(self.images_labels)
+
+        logger.info("Shuffle[%s]样本数据", self.name)
 

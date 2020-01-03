@@ -31,7 +31,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     --learning_rate=0.001 \
     --validation_steps=1  \
     --validation_batch=8 \
-    --workers=3 \
+    --workers=10 \
     --preprocess_num=5 \
     --early_stop=100
 
