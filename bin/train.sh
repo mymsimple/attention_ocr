@@ -26,14 +26,15 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     python -m main.train \
     --name=attention_ocr \
     --epochs=100 \
-    --steps_per_epoch=5 \
-    --batch=8 \
+    --steps_per_epoch=3 \
+    --batch=3 \
+    --retrain=True \
     --learning_rate=0.001 \
     --validation_steps=1  \
     --validation_batch=8 \
-    --workers=10 \
+    --workers=1 \
     --preprocess_num=5 \
-    --early_stop=100
+    --early_stop=10
 
     if [ "$1" == "debug" ]; then
         # 恢复源文件，防止git提交

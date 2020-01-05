@@ -84,7 +84,7 @@ def model(conf,args):
     attn_out, attn_states = attn_layer([encoder_out, decoder_out])#[(N,512,seq),(N,3770)]
 
     # concat Attention的输出 + GRU的输出
-    decoder_concat_input = Concatenate(axis=-1, name='concat123_layer')([decoder_out, attn_out])
+    decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
 
     # 5.Dense layer output layer 输出层
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
