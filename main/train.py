@@ -8,6 +8,7 @@ from main import conf
 import logging
 from keras import backend as K
 from tensorflow.python.keras.models import load_model
+import tensorflow as tf
 
 logger = logging.getLogger("Train")
 
@@ -72,6 +73,7 @@ def train(args):
     logger.info("Begin train开始训练：")
 
     # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
+    K.get_session().run(tf.global_variables_initializer())
     model.fit_generator(
         generator=train_sequence,
         steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
@@ -92,7 +94,6 @@ def train(args):
 if __name__ == "__main__":
     log.init()
     args = conf.init_args()
-    import tensorflow as tf
 
     # with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
     #     with tf.device("/device:GPU:0"):
