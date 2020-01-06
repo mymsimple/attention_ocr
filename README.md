@@ -294,3 +294,62 @@ Attention是在编码和解码都完成之后进行的，用编码器和解码�
 主要是修改卷基层，和之前的CRNN的代码对比了一下，发现了不少问题，后来照着CRNN的代码重新改了一遍。
 
 发现的主要问题是，BatchNormal应该是是在激活函数Relu之后。
+
+## 1.2
+
+之前的sequence是有问题，一次都加载到内存里了，其实是误解了sequence的用法了。
+
+正确的姿势是，在__init__中只要告诉全部数据的条数即可，在__getitem__里面才真正去加载文件和做预处理呢，idx还是标明批次的。
+
+```python
+   model.fit_generator(
+        generator=train_sequence,
+        steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
+        epochs=args.epochs,
+        workers=args.workers,   #<------------- 同时启动多少个进程加载
+        callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
+        use_multiprocessing=True, #<----------- 这里开启多进程，就可以多进程同时处理样本加载了，内部会有一个queue来缓存
+        validation_data=valid_sequence,
+        validation_steps=args.validation_steps)
+```
+
+## 1.3
+
+遇到一个诡异的异常：
+
+发生在训练的时候，看字面意思是，说attention_layer/U_a这个参数未被初始化，诡异的是，说Adam的ReadVariableOp操作CPU中变量attention_layer/U_a，
+可是，这个变量明明在GPU中呢
+
+```python
+Traceback (most recent call last):
+  File "/usr/lib/python3.5/runpy.py", line 184, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/usr/lib/python3.5/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/app.fast/projects/attention_ocr/main/train.py", line 100, in <module>
+    train(args)
+  File "/app.fast/projects/attention_ocr/main/train.py", line 86, in train
+    validation_steps=args.validation_steps)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/keras/engine/training.py", line 1761, in fit_generator
+    initial_epoch=initial_epoch)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/keras/engine/training_generator.py", line 190, in fit_generator
+    x, y, sample_weight=sample_weight, class_weight=class_weight)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/keras/engine/training.py", line 1537, in train_on_batch
+    outputs = self.train_function(ins)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/keras/backend.py", line 2897, in __call__
+    fetched = self._callable_fn(*array_vals)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/client/session.py", line 1454, in __call__
+    self._session._session, self._handle, args, status, None)
+  File "/root/py3/lib/python3.5/site-packages/tensorflow/python/framework/errors_impl.py", line 519, in __exit__
+    c_api.TF_GetCode(self.status.status))
+    tensorflow.python.framework.errors_impl.FailedPreconditionError: 
+    Error while reading resource variable attention_layer/U_a from Container: localhost. 
+    This could mean that the variable was uninitialized. 
+    Invalid argument: Trying to access resource located 
+        in   device /job:localhost/replica:0/task:0/device:GPU:0 
+        from device /job:localhost/replica:0/task:0/device:CPU:0
+	 [[Node: training/Adam/ReadVariableOp_86 = ReadVariableOp[dtype=DT_FLOAT, 
+	    _device="/job:localhost/replica:0/task:0/device:CPU:0"](attention_layer/U_a/_235)]]
+```
+开始以为是之前的keras和tf.keras的问题，检查了后，没有发现混用的地方的。
+
