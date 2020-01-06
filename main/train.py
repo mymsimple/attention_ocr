@@ -94,6 +94,6 @@ if __name__ == "__main__":
     args = conf.init_args()
     import tensorflow as tf
 
-    with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
-        with tf.device("/device:GPU:0"):
-            train(args)
+    # with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
+    #     with tf.device("/device:GPU:0"):
+    train(args)
