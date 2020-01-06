@@ -4,7 +4,6 @@ import re
 import os
 from Levenshtein import *
 import logging
-from keras.utils import np_utils
 
 logger = logging.getLogger("Data_Util")
 

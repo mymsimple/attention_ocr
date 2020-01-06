@@ -5,12 +5,12 @@
 # 原因是不能用keras自带的vgg19+keras自带的bidirectional，靠，肯定是版本不兼容的问题
 # 切换到下面的就好了，之前还是试验了用tf的bidirectional+keras的vgg19，也是不行，报错：AttributeError: 'Node' object has no attribute 'output_masks'
 # 靠谱的组合是：tf的bidirectional+tf的vgg19
-from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.optimizers import Adam
+from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
 from layers.conv import Conv
-import tensorflow as tf
 from layers.attention import AttentionLayer
+import tensorflow as tf
 import logging
 
 logger = logging.getLogger("Model")

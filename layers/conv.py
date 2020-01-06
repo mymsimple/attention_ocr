@@ -1,10 +1,10 @@
-from tensorflow.python.keras.layers import Conv2D
-from tensorflow.python.keras.layers import LeakyReLU
-from tensorflow.python.keras.layers import MaxPooling2D
-from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import Lambda
-from tensorflow.python.keras.engine import Layer
-from tensorflow.python.keras.backend import squeeze
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.backend import squeeze
 
 class Conv(Layer):
     def squeeze_wrapper(self,tensor):

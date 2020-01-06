@@ -3,11 +3,11 @@ from layers.conv import Conv
 from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
-from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from main import conf
 import logging
-from keras import backend as K
-from tensorflow.python.keras.models import load_model
+# from keras import backend as K
+from tensorflow.keras.models import load_model
 import tensorflow as tf
 
 logger = logging.getLogger("Train")
@@ -24,7 +24,7 @@ def train(args):
     conf.CHARSET_SIZE = len(charset)
 
     model, _, _ = _model.model(conf, args)
-    K.get_session().run(tf.global_variables_initializer())
+    # K.get_session().run(tf.global_variables_initializer())
     train_sequence = SequenceData(name="训练",
                                   label_file=args.train_label_file,
                                   charset_file=conf.CHARSET,
@@ -95,6 +95,6 @@ def train(args):
 if __name__ == "__main__":
     log.init()
     args = conf.init_args()
-    with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
+    # with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
     #     with tf.device("/device:GPU:0"):
-        train(args)
+    train(args)
