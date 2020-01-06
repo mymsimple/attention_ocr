@@ -8,11 +8,10 @@
 from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
-from layers import conv
+from layers.conv import Conv
 import tensorflow as tf
 from layers.attention import AttentionLayer
 import logging
-from layers.conv import Conv
 
 logger = logging.getLogger("Model")
 
