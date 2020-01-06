@@ -80,7 +80,7 @@ def train(args):
         epochs=args.epochs,
         workers=args.workers,   # 同时启动多少个进程加载
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
-        use_multiprocessing=False,
+        use_multiprocessing=True,
         validation_data=valid_sequence,
         validation_steps=args.validation_steps)
 
@@ -94,6 +94,6 @@ def train(args):
 if __name__ == "__main__":
     log.init()
     args = conf.init_args()
-    with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
+    #with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
     #     with tf.device("/device:GPU:0"):
-        train(args)
+    train(args)

@@ -7,7 +7,8 @@
 # 靠谱的组合是：tf的bidirectional+tf的vgg19
 from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
+# from tensorflow.keras.optimizers import Adam
+from keras.optimizers import Adam
 from layers.conv import Conv
 from layers.attention import AttentionLayer
 import tensorflow as tf
