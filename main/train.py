@@ -92,5 +92,8 @@ def train(args):
 if __name__ == "__main__":
     log.init()
     args = conf.init_args()
+    import tensorflow as tf
+
     with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
-        train(args)
+        with tf.device("/device:GPU:0"):
+            train(args)

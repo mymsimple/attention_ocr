@@ -15,6 +15,10 @@
 
 echo "开始训练"
 
+Date=$(date +%Y%m%d%H%M)
+export CUDA_VISIBLE_DEVICES=0
+
+
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
 
     if [ "$1" == "debug" ]; then
@@ -49,10 +53,6 @@ if [ "$1" = "stop" ]; then
     ps aux|grep python|grep attention_ocr|awk '{print $2}'|xargs kill -9
     exit
 fi
-
-
-Date=$(date +%Y%m%d%H%M)
-export CUDA_VISIBLE_DEVICES=0
 
 
 echo "生产模式"
