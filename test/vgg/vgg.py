@@ -123,7 +123,7 @@ def train(full_model, image, label, batch_size, n_epochs=1):
 
 
 if __name__ == "__main__":
-    im = cv2.resize(cv2.imread('data/test5.png'), (224, 224)).astype(np.float32)
+    im = cv2.resize(cv2.imread('data/test.jpg'), (224, 224)).astype(np.float32)
     im[:,:,0] -= 103.939
     im[:,:,1] -= 116.779
     im[:,:,2] -= 123.68
