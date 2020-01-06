@@ -8,7 +8,7 @@
 from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.keras.models import Model
 # from tensorflow.keras.optimizers import Adam
-from keras.optimizers import Adam
+# from keras.optimizers import Adam
 from layers.conv import Conv
 from layers.attention import AttentionLayer
 import tensorflow as tf
@@ -94,12 +94,12 @@ def model(conf,args):
 
     # whole model 整个模型
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_prob)
-    opt = Adam(lr=args.learning_rate)
+    # opt = Adam(lr=args.learning_rate)
 
     # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？
     # 这个疑惑在这个例子中看到答案：https://keras.io/examples/lstm_seq2seq/
     # 我猜，keras的代码中应该是做了判断，如果是多个categorical_crossentropy，应该会tf.reduce_mean()一下吧。。。
-    train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[words_accuracy])
+    train_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=[words_accuracy])
 
     train_model.summary()
 
