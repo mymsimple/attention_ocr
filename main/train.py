@@ -22,8 +22,9 @@ def train(args):
 
     charset = label_utils.get_charset(conf.CHARSET)
     conf.CHARSET_SIZE = len(charset)
-    model, _, _ = _model.model(conf, args)
 
+    model, _, _ = _model.model(conf, args)
+    K.get_session().run(tf.global_variables_initializer())
     train_sequence = SequenceData(name="训练",
                                   label_file=args.train_label_file,
                                   charset_file=conf.CHARSET,
@@ -73,7 +74,7 @@ def train(args):
     logger.info("Begin train开始训练：")
 
     # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
-    # K.get_session().run(tf.global_variables_initializer())
+
     model.fit_generator(
         generator=train_sequence,
         steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
