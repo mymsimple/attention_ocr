@@ -66,6 +66,7 @@ def model(conf,args):
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
+                                   input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
                                    name='bidirectional_encoder')
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output)
 

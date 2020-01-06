@@ -14,6 +14,8 @@ from keras.layers import Layer
 from keras.backend import squeeze
 
 class Conv(Layer):
+
+    #[N,1,256/4,512] => [N,256/4,512]
     def squeeze_wrapper(self,tensor):
         return squeeze(tensor, axis=1)
 
