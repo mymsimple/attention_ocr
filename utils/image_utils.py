@@ -1,4 +1,7 @@
 import cv2,numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 图像缩放，高度都是32,这次的宽度，会和这个批次最宽的图像对齐填充padding
 def read_and_resize_image(image_names: list,conf):
@@ -23,7 +26,9 @@ def read_and_resize_image(image_names: list,conf):
         cv2.imwrite("data/test.jpg", padded_image)
         padded_images.append(padded_image)
 
-    return np.stack(padded_images,axis=0)
+    images = np.stack(padded_images,axis=0)
+    logger.debug("图像的shape：%r",images.shape)
+    return images
 
 
 if __name__=="__main__":

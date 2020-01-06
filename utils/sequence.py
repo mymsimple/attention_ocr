@@ -51,9 +51,7 @@ class SequenceData(Sequence):
         # labels是[nparray([<3773>],[<3773>],[<3773>]),...]，是一个数组，里面是不定长的3370维度的向量,(N,3770),如： (18, 3861)
         labels = list(label_ids)
         labels = pad_sequences(labels,maxlen=self.conf.MAX_SEQUENCE,padding="post",value=0)
-
-        #to_categorical之后的shape： [N,time_sequence(字符串长度),3773]
-        labels = to_categorical(labels,num_classes=len(self.charsets))
+        labels = to_categorical(labels,num_classes=len(self.charsets))        #to_categorical之后的shape： [N,time_sequence(字符串长度),3773]
 
         logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
                     os.getpid(),
