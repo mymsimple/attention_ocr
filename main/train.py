@@ -80,7 +80,7 @@ def train(args):
         epochs=args.epochs,
         workers=args.workers,   # 同时启动多少个进程加载
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
-        use_multiprocessing=False,
+        use_multiprocessing=True,
         validation_data=valid_sequence,
         validation_steps=args.validation_steps)
 

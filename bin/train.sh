@@ -16,7 +16,7 @@
 echo "开始训练"
 
 Date=$(date +%Y%m%d%H%M)
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 
 
 if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
