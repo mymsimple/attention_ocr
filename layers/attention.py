@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from keras.layers import Layer
 from keras import backend as K
-from keras.backend import tile
+# from keras.backend import tile
 
 
 from utils.logger import _p_shape,_p
@@ -14,6 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
+# 具体参考这篇文章：https://towardsdatascience.com/light-on-math-ml-attention-with-keras-dc8dbc1fad39
 class AttentionLayer(Layer):
     """
     This class implements Bahdanau attention (https://arxiv.org/pdf/1409.0473.pdf).
@@ -132,7 +133,7 @@ class AttentionLayer(Layer):
             # print(tf.shape(fake_state))
             # print("hidden_size:",hidden_size)
 
-            fake_state = tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim) (b,latent_dim=64)
+            fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim) (b,latent_dim=64)
             return fake_state
 
         # encoder_out_seq = (batch_size, enc_seq_len, latent_dim)
@@ -174,18 +175,22 @@ class AttentionLayer(Layer):
         #c_outputs [b,64,512]
         c_outputs = _p_shape(c_outputs,"注意力c输出：：：：")
 
-        # 输出的是注意力的向量(batch,图像seq,)，
+        # 输出：
+        # 注意力c_outputs的向量(batch,图像seq,512)，
+        # 注意力e_outputs的向量(batch,图像seq,图像宽度/4)，
         return c_outputs, e_outputs
 
     def compute_output_shape(self, input_shape):
         """ Outputs produced by the layer
-            attn_layer([encoder_out, decoder_out])  # [(W/4,512),(Seq,512)]
-            input_shape[0] => encoder_out =>(W/4,512)
-            input_shape[1] => decoder_out =>(Seq,512)
-            input_shape[1][0]: Seq
-            input_shape[1][1]: 512
-            input_shape[1][2]:
+            attn_layer([N,encoder_out, decoder_out])  # [N,(W/4,512),(Seq,512)]
+            input_shape[0] => encoder_out =>(N,W/4,512)
+            input_shape[1] => decoder_out =>(N,Seq,512)
+            input_shape[1][0]: N
+            input_shape[1][1]: Seq
+            input_shape[1][2]: 512
             input_shape[0][1]: W/4
+            返回：[[N,Seq,512],[N,Seq,W/4]]
+            对应：c_outputs, e_outputs的shape，e_outputs是一个概率分布，维度是宽度/4
         """
         return [
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][2])),

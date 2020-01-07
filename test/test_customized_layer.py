@@ -129,6 +129,7 @@ class Conv(Layer):
     def compute_output_shape(self, input_shape):
         print("input_shape:",input_shape)
         return (None, int(input_shape[2]/4),512)
+
 if __name__ == '__main__':
 
     input_image = Input(shape=(32,256,3))
