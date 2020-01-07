@@ -14,6 +14,10 @@ from keras.layers import Layer
 from keras.backend import squeeze
 import tensorflow as tf
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Conv(Layer):
 
     #[N,1,256/4,512] => [N,256/4,512]
@@ -123,4 +127,7 @@ class Conv(Layer):
 
     # input_shape[N,H,W,512] => output_shape[N,W/4,512]
     def compute_output_shape(self, input_shape):
-        return  tf.TensorShape((None, int(input_shape[2] / 4), 512))
+        logger.debug("compute_output_shape:input_shape :%r",input_shape)
+        output_shape = (input_shape[0], int(input_shape[2] / 4), 512)
+        logger.debug("compute_output_shape:output_shape:%r",output_shape)
+        return output_shape
