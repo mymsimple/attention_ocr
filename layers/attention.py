@@ -1,10 +1,10 @@
 import tensorflow as tf
-# from tensorflow.keras.layers import Layer
-# from tensorflow.keras import backend as K
-# from tensorflow.python.keras.backend import tile
+# from keras.layers import Layer
+# from keras import backend as K
 
-from keras.layers import Layer
-from keras import backend as K
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import backend as K
+
 
 
 from utils.logger import _p_shape,_p
@@ -127,12 +127,12 @@ class AttentionLayer(Layer):
             fake_state = K.zeros_like(inputs)  # [b,64,512]<= (batch_size, enc_seq_len, latent_dim)
             fake_state = K.sum(fake_state, axis=[1, 2])  # <= (batch_size)
             fake_state = K.expand_dims(fake_state)  # <= (batch_size, 1)
-            print(fake_state)
-            print("------")
-            print(tf.shape(fake_state))
-            print("hidden_size:",hidden_size)
+            # print(fake_state)
+            # print("------")
+            # print(tf.shape(fake_state))
+            # print("hidden_size:",hidden_size)
 
-            fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim) (b,latent_dim=64)
+            fake_state = K.tile(fake_state, [1, hidden_size])  # <= (batch_size, latent_dim) (b,64)
             return fake_state
 
         # encoder_out_seq = (batch_size, enc_seq_len, latent_dim)
