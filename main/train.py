@@ -3,11 +3,13 @@ from layers.conv import Conv
 from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
-from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+# from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+# from tensorflow.keras import backend as K
+# from tensorflow.keras.models import load_model
+from keras.models import load_model
+from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from main import conf
 import logging
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import load_model
 
 logger = logging.getLogger("Train")
 
