@@ -27,8 +27,8 @@ class AttentionLayer(Layer):
             return super(AttentionLayer, self).__call__(inputs, **kwargs)
 
     # input_shape是输入的张量的shape，他应该和你的隐含层计算后，输出
-    # attn_out, attn_states = attn_layer([encoder_out, decoder_out])#[(N,512,seq),(N,3770)]
-    def build(self, input_shape): # input_shape = [(N,512,Seq),(N,3770,Seq)]
+    # attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+    def build(self, input_shape): # input_shape = [(N,W/4,512),(N,Seq,512)]
         assert isinstance(input_shape, list)
         # Create a trainable weight variable for this layer.
         logger.debug("Attention build时候，input_shape为:%r",input_shape)
@@ -73,7 +73,7 @@ class AttentionLayer(Layer):
         # decoder_out一个和encoder_out_seq一串，对
         def energy_step(decode_outs, states): # decode_outs(batch,dim)
             decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
-            # decoder_seq [b,30,512]
+            # decoder_seq [N,30,512] 30是字符串长度
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2] # 30, 512
             de_hidden = decode_outs.shape[-1]
             #  W * h_j
@@ -178,7 +178,15 @@ class AttentionLayer(Layer):
         return c_outputs, e_outputs
 
     def compute_output_shape(self, input_shape):
-        """ Outputs produced by the layer """
+        """ Outputs produced by the layer
+            attn_layer([encoder_out, decoder_out])  # [(W/4,512),(Seq,512)]
+            input_shape[0] => encoder_out =>(W/4,512)
+            input_shape[1] => decoder_out =>(Seq,512)
+            input_shape[1][0]: Seq
+            input_shape[1][1]: 512
+            input_shape[1][2]:
+            input_shape[0][1]: W/4
+        """
         return [
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][2])),
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[0][1]))

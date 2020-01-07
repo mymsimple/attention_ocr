@@ -10,13 +10,18 @@ from keras.layers import LeakyReLU
 from keras.layers import MaxPooling2D
 from keras.layers import BatchNormalization
 from keras.layers import Lambda
-from keras.layers import Layer
+from keras.layers import Layer,Flatten,Dense
 from keras.backend import squeeze
+from keras.optimizers import Adam
+from keras.models import Model
+from keras.layers import Input
+import numpy as np
 
 class Conv(Layer):
 
     #[N,1,256/4,512] => [N,256/4,512]
     def squeeze_wrapper(self,tensor):
+        print("tensor:",tensor)
         return squeeze(tensor, axis=1)
 
     def __init__(self, **kwargs):
@@ -120,6 +125,22 @@ class Conv(Layer):
 
         super(Conv, self).build(input_shape)
 
-    # input_shape[N,H,W,512] => output_shape[N,W/4,512]
+    # # input_shape[N,H,W,512] => output_shape[N,W/4,512]
     def compute_output_shape(self, input_shape):
-        return (None, int(input_shape[2] / 4), 512)
+        print("input_shape:",input_shape)
+        return (None, int(input_shape[2]/4),512)
+if __name__ == '__main__':
+
+    input_image = Input(shape=(32,256,3))
+    conv = Conv()
+    conv_output = conv(input_image) # output[64,512]
+    print(conv_output)
+    flat = Flatten()(conv_output)
+    output = Dense(4,activation='softmax',input_shape=(-1,))(flat)
+
+    train_model = Model(inputs=input_image, outputs=output)
+    adam = Adam()
+    train_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+    train_data = np.random.random((10,32,256,3))
+    train_labels = np.random.random((10,4))
+    train_model.fit(train_data, train_labels, epochs=1, batch_size=1)

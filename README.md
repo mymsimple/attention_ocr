@@ -2,6 +2,8 @@
 
 这个是基于[@thushv89](https://github.com/thushv89/attention_keras)的注意力模型的基础上，添加了OCR的功能，为了表示尊敬，直接fork了他。
 
+他对attention的实现的博客在[这里](https://towardsdatascience.com/light-on-math-ml-attention-with-keras-dc8dbc1fad39)。
+
 但是，实际上我在他的基础上要添加OCR识别，参考的论文是
 《Robust Scene Text Recognition with Automatic Rectification（RARE）》中的SRE网络。
 

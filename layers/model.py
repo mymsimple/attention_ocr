@@ -84,9 +84,10 @@ def model(conf,args):
     attn_layer = AttentionLayer(name='attention_layer')
 
     # attention层的输入是编码器的输出，和，解码器的输出，他俩的输出是一致的，都是512
-    # encoder_out shape=(?, 50, 512) , decoder_out shape=(?, ?, 512)
+    # encoder_out shape=(?, 50, 512) 50是图像宽度/4 ,
+    # decoder_out shape=(?, 30, 512) 30是要识别的字符串长度
     logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)
-    attn_out, attn_states = attn_layer([encoder_out, decoder_out])#[(N,512,seq),(N,3770)]
+    attn_out, attn_states = attn_layer([encoder_out, decoder_out])
 
     # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
