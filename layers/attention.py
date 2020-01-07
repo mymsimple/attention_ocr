@@ -5,7 +5,6 @@ import tensorflow as tf
 
 from keras.layers import Layer
 from keras import backend as K
-# from keras.backend import tile
 
 
 from utils.logger import _p_shape,_p
@@ -192,7 +191,9 @@ class AttentionLayer(Layer):
             返回：[[N,Seq,512],[N,Seq,W/4]]
             对应：c_outputs, e_outputs的shape，e_outputs是一个概率分布，维度是宽度/4
         """
-        return [
+        output_shape= [
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][2])),
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[0][1]))
         ]
+        logger.debug("Attention Output Shape:%r",output_shape)
+        return output_shape

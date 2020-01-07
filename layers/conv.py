@@ -12,6 +12,7 @@ from keras.layers import BatchNormalization
 from keras.layers import Lambda
 from keras.layers import Layer
 from keras.backend import squeeze
+import tensorflow as tf
 
 class Conv(Layer):
 
@@ -122,4 +123,4 @@ class Conv(Layer):
 
     # input_shape[N,H,W,512] => output_shape[N,W/4,512]
     def compute_output_shape(self, input_shape):
-        return (None, int(input_shape[2] / 4), 512)
+        return  tf.TensorShape((None, int(input_shape[2] / 4), 512))
