@@ -3,7 +3,7 @@ from layers.conv import Conv
 from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
-
+import os
 from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from tensorflow.keras.models import load_model
 
@@ -12,6 +12,7 @@ from tensorflow.keras.models import load_model
 
 from main import conf
 import logging
+from utils.visualise_attention import  TBoardVisual
 
 logger = logging.getLogger("Train")
 
@@ -42,7 +43,7 @@ def train(args):
                                   batch_size=args.validation_batch)
 
     timestamp = util.timestamp_s()
-    tb_log_name = conf.DIR_TBOARD+"/"+timestamp
+    tb_log_name = os.path.join(conf.DIR_TBOARD,timestamp)
     checkpoint_path = conf.DIR_CHECKPOINT+"/checkpoint-{}.hdf5".format(timestamp)
 
     # 如果checkpoint文件存在，就加载之
@@ -78,15 +79,20 @@ def train(args):
 
     # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
 
+
+    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name)
+
     model.fit_generator(
         generator=train_sequence,
         steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
         epochs=args.epochs,
         workers=args.workers,   # 同时启动多少个进程加载
-        callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop],
+        callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop,attention_visible],
         use_multiprocessing=True,
         validation_data=valid_sequence,
         validation_steps=args.validation_steps)
+    # [validation_steps](https://keras.io/zh/models/model/)：
+    # 对于 Sequence，它是可选的：如果未指定，将使用 len(generator) 作为步数。
 
     logger.info("Train end训练结束!")
 
@@ -100,4 +106,5 @@ if __name__ == "__main__":
     args = conf.init_args()
     #with K.get_session(): # 防止bug：https://stackoverflow.com/questions/40560795/tensorflow-attributeerror-nonetype-object-has-no-attribute-tf-deletestatus
     #     with tf.device("/device:GPU:0"):
+
     train(args)

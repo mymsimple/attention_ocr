@@ -50,10 +50,23 @@ def pred(args):
         # outputs=[decoder_pred,attn_states,decoder_state])
         # encoder_out_states->attention用
         decoder_out, attention, decoder_state = \
-            decoder_model.predict([decoder_inputs,encoder_out_states,decoder_state])
+            decoder_model.predict([decoder_inputs,decoder_state])
+
+        encoder_out_states
+
+
+        # beam search impl
+        max_k_index = decoder_out.argsort()[:3]
+        max_prob = decoder_out[max_k_index]
+        max_labels = label_utils.id2strs(max_k_index) #TODO id2strs
+
+
 
         # 得到当前时间的输出，是一个3770的概率分布，所以要argmax，得到一个id
         decoder_index = np.argmax(decoder_out, axis=-1)[0, 0]
+
+
+
 
         if decoder_index == 2:
             logger.info("预测字符为ETX，退出")
@@ -66,6 +79,11 @@ def pred(args):
         logger.info("预测字符为:%s",pred_char)
         result+= pred_char
 
+    if len(result)>=conf.MAX_SEQUENCE:
+        logger.debug("预测字符为：%s，达到最大预测长度", result)
+    else:
+        logger.debug("预测字符为：%s，解码最后为ETX", result)
+
     return pred_char,attention_weights
 
 def sents2sequences(tokenizer, sentences, reverse=False, pad_length=None, padding_type='post'):
@@ -75,6 +93,9 @@ def sents2sequences(tokenizer, sentences, reverse=False, pad_length=None, paddin
         preproc_text = np.flip(preproc_text, axis=1)
 
     return preproc_text
+
+
+
 
 
 if __name__ == "__main__":

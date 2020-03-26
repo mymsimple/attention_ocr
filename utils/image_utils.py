@@ -23,11 +23,11 @@ def read_and_resize_image(image_names: list,conf):
             # 否则，就给填充白色,[(0, 0),(0, dim_difference),(0,0)]=>[高前后忽略,宽前忽略尾部加，通道前后忽略]
             padded_image = np.pad(image, [(0, 0),(0, dim_difference),(0,0)], 'constant',constant_values=(255))
 
-        cv2.imwrite("data/test.jpg", padded_image)
+        # cv2.imwrite("data/test.jpg", padded_image)
         padded_images.append(padded_image)
 
     images = np.stack(padded_images,axis=0)
-    logger.debug("图像的shape：%r",images.shape)
+    # logger.debug("图像的shape：%r",images.shape)
     return images
 
 

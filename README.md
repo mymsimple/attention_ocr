@@ -82,10 +82,24 @@ conv_output_with_padding = Lambda(padding_wrapper)(conv_output);
 
 最后，我又回到老路上，老老实实的定义一个最大宽度，然后加如padding，而且还是用的标准的tensorflow的tf.pad_seqence的方式。
 
+## 总结一下整体思路
 
-## 遇到的版本的坑
+就是一个CNN+一个Seq2Seq，CNN是一个标准的CNN，只是用Keras的Layer封装了一下而已，不过这里是有问题的，下节说。
 
-### 坑1：不要混用keras和tf.keras的代码
+然后是Seq2Seq，是一个双向GRU+一个GRU，编码器是双向GRU，解码器是一个单向GRU。
+
+训练的时候，需要的输入是两个，一个是图片，一个是需要解码的字符串，但是以STX开头。标签是1个，是需要解码的字符串，但是是以ETX结尾的。这个是标准的训练方式，即，解码器的输入是标签的前一个字。需要注意的是，在真正预测的时候，就需要使用前一个时间输出的字符了，这个体现在模型上，就是训练模型和预测模型是不一样的，但是参数是相同的。
+
+Attention的代码仔细看了一遍，没有任何问题，不过细节确实很多，需要很认真的捋一遍才能理解，特别是对于K.rnn函数的理解，以及在这个attention代码中的应用，要尤其注意。
+
+Attention是在编码和解码都完成之后进行的，用编码器和解码器的输出，共同算出了编码器的每个步骤的加权平均结果，再灌入解码器的每个时间片的最后一步，即全连接+softmax，得到最后的解码结果。
+
+词表中加入了3个额外的词，分别是0：空格；1：ETX；2：STX；分别用来做词的padding，句子结束标志，句子开始标志。
+
+
+# 遇到的版本的坑
+
+## 坑1：不要混用keras和tf.keras的代码
 
 争取的代码为：
 ```
@@ -116,7 +130,7 @@ from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Conc
 ```
 是的，全部都替换成tensorflow里面的keras的东东就可以了。
 
-### 坑2：seq2seq中的坑
+## 坑2：seq2seq中的坑
 
 seq2seq的实现中，也有很多细节的坑
 
@@ -213,7 +227,7 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 
 # 开发日志
 
-## 8.21 
+## 2019.8.21 
 
 修正一下bugs:
 
@@ -234,7 +248,7 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 为何要把epochs缩短，原因是Keras是在每个epochs结束的时候，才会回调诸如validate、early stop、checkpoint等回调。
 目前也只有这个解决方案了。
 
-## 8.22
+## 2019.8.22
 
 发现一个新问题，在生产环境出现了sequence加载数据卡住的情况，于是经过本地的实验和测试，发现：
 - 不用用多进程方式加载，不知道为何总是卡住，改成multiprocess=False,即使用多线程就好了，[参考](https://stackoverflow.com/questions/54620551/confusion-about-multiprocessing-and-workers-in-keras-fit-generator-with-window)
@@ -252,52 +266,24 @@ return [images,labels[:,:-1,:]],labels[:,1:,:]
 - 另外装在checkpoint的时候，遇到一个警告："WARNING:tensorflow:Layer decoder_gru was passed non-serializable keyword arguments: {'initial_state': [<tf.Tensor 'concatenate_1/concat:0' shape=(?, 128) dtype=float32>]}. They will not be included in the serialized model (and thus will be missing at deserialization time)."，
 [网上](https://github.com/keras-team/keras/issues/9914)也有人遇到，但是貌似也没啥解决办法，也不太了解影响，所以我也暂时忽略了。
 
-## 8.23
+## 2019.8.23
 - 增大了GRU神经元数量64=>512
-- 
 
-# 跑一跑原作者的例子
 
-作者的代码目前被转移到test/examples目录下了。
 
-为了加深attention的理解，可以跑原作者的Attention的例子：
-
-`python -m examples.nmt_bidirectional.train`
-要跑的话，需要先准备数据：
-```
-cd data
-tar -xvf small_vocab_en.txt.gz
-tar -xvf small_vocab_fr.txt.gz
-```
----
-
-## 12.29
+## 2019.12.29
 
 之前训练一直不收敛，但是一直也没有特别认真的把代码再捋一遍，最近，在ZN的帮助下，我们一起把代码捋了一遍，终于发现了一些问题。
 
 由于代码已经是4、5个月之前写的，难免都有些遗忘了，我先把整儿思路捋一遍，然后再说我代码的问题。
 
-### 代码整体整体思路
-
-就是一个CNN+一个Seq2Seq，CNN是一个标准的CNN，只是用Keras的Layer封装了一下而已，不过这里是有问题的，下节说。
-
-然后是Seq2Seq，是一个双向GRU+一个GRU，编码器是双向GRU，解码器是一个单向GRU。
-
-训练的时候，需要的输入是两个，一个是图片，一个是需要解码的字符串，但是以STX开头。标签是1个，是需要解码的字符串，但是是以ETX结尾的。这个是标准的训练方式，即，解码器的输入是标签的前一个字。需要注意的是，在真正预测的时候，就需要使用前一个时间输出的字符了，这个体现在模型上，就是训练模型和预测模型是不一样的，但是参数是相同的。
-
-Attention的代码仔细看了一遍，没有任何问题，不过细节确实很多，需要很认真的捋一遍才能理解，特别是对于K.rnn函数的理解，以及在这个attention代码中的应用，要尤其注意。
-
-Attention是在编码和解码都完成之后进行的，用编码器和解码器的输出，共同算出了编码器的每个步骤的加权平均结果，再灌入解码器的每个时间片的最后一步，即全连接+softmax，得到最后的解码结果。
-
-词表中加入了3个额外的词，分别是0：空格；1：ETX；2：STX；分别用来做词的padding，句子结束标志，句子开始标志。
-
-### bug修复
+还是发现了一些问题：
 
 主要是修改卷基层，和之前的CRNN的代码对比了一下，发现了不少问题，后来照着CRNN的代码重新改了一遍。
 
 发现的主要问题是，BatchNormal应该是是在激活函数Relu之后。
 
-## 1.2
+## 2020.1.2
 
 之前的sequence是有问题，一次都加载到内存里了，其实是误解了sequence的用法了。
 
@@ -315,7 +301,7 @@ Attention是在编码和解码都完成之后进行的，用编码器和解码�
         validation_steps=args.validation_steps)
 ```
 
-## 1.3
+## 2020.1.3
 
 遇到一个诡异的异常：
 
@@ -353,5 +339,26 @@ Traceback (most recent call last):
 	 [[Node: training/Adam/ReadVariableOp_86 = ReadVariableOp[dtype=DT_FLOAT, 
 	    _device="/job:localhost/replica:0/task:0/device:CPU:0"](attention_layer/U_a/_235)]]
 ```
-开始以为是之前的keras和tf.keras的问题，检查了后，没有发现混用的地方的。
+开始以为是之前的keras和tf.keras的问题，检查了后，没有发现混用的地方的。我改成了tensorflow.keras.xxx => keras.xxx，结果出现了上述问题，唉，很诡异，肯定是没啥问题的啊，
+然后我就查，发现，Conv，也就是卷积那块，没有做compute_output_shape的，输出shape的计算，加上了，还是不行，
+没办法，只好回滚，从 keras.xxx⇒tensorflow.keras.xxx，错误依旧，还是Adam的时候GPU引用了CPU之类的东西，
+记得之前google的时候，很多帖子都是说keras版本的问题，我check了我的keras是2.1.0，tensorflow是tensorflow-gpu==1.8.0，没问题啊。
+最后，彻底放弃，直接查了一个我当前CUDA9能支持的最大tensorflow==1.12.0，而keras是2.2.0，安装之，死马当活马医了，结果，好了！
+结论，此坑太深，之前看了不下30片帖子，都没有确切的线索，好几篇都是提到了keras的和tensorflow.keras的混用问题，以及版本问题，之前还试验过1.9，但是，最终还是极端的换成了1.12，才解决。
 
+但是，跑了1天1夜，还是不收敛，loss的下降速度很慢，正确率也上不去。继续观察。
+
+# 如果需要跑原作者的例子
+
+作者的代码目前被转移到test/examples目录下了。
+
+为了加深attention的理解，可以跑原作者的Attention的例子：
+
+`python -m examples.nmt_bidirectional.train`
+
+要跑的话，需要先准备数据：
+```
+cd data
+tar -xvf small_vocab_en.txt.gz
+tar -xvf small_vocab_fr.txt.gz
+```

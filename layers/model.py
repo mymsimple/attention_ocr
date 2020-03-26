@@ -8,6 +8,7 @@
 from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras import backend as K
 
 # from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 # from keras.models import Model
@@ -17,7 +18,7 @@ from layers.conv import Conv
 from layers.attention import AttentionLayer
 import tensorflow as tf
 import logging
-
+from utils.logger import _p_shape,_p
 logger = logging.getLogger("Model")
 
 conv = Conv()
@@ -39,12 +40,29 @@ conv = Conv()
 # 这个函数的细节，测试了一下，参考：test/test_accuracy.py
 # 不过这个是对一个batch的，对于validate中的多个batches，是否还会在多个batches上平均，
 # 这个细节就不太了解了....?
+# 2020.3.19,y_pred第一维度是batch,:https://stackoverflow.com/questions/46663013/what-is-y-true-and-y-pred-when-creating-a-custom-metric-in-keras
 def words_accuracy(y_true, y_pred):
+    # logger.debug("DEBUG@@@,看看y_pred的shape:%r",K.int_shape(y_pred))
+    # 调试结果是======>(None, None, 3864)
+    # 第一个维度是batch，第三个维度是词表长度，那第二个维度呢？
+    #
+    # y_pred = _p_shape(y_pred,"DEBUG@@@,运行态的时候的words_accuracy的入参y_pred的shape")
+    # 运行态的时候的words_accuracy的入参y_pred的shape[2 29 3864]
+    # 所以y_pred[batch,seq_len,vocabulary_size]
+    # 经调试，没问题
+
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
+    # max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_p")
+    # max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_l")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
+    # correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的correct_pred")
     _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
-    return tf.reduce_mean(tf.cast(_result, tf.float32))
+    # _result = _p_shape(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result的shape")
+    # _result = _p(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result")
+    result = tf.reduce_mean(tf.cast(_result, tf.float32))
+    # result = _p(result, "DEBUG@@@,运行态的时候的words_accuracy的result")
+    return result
 
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def model(conf,args):
@@ -100,6 +118,7 @@ def model(conf,args):
 
     # whole model 整个模型
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_prob)
+    # train_model = Model(inputs=[input_image, decoder_inputs],outputs=[decoder_prob,attn_states])
     opt = Adam(lr=args.learning_rate)
 
     # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？
@@ -125,9 +144,15 @@ def model(conf,args):
     infer_encoder_model.summary()
 
     ### decoder model ###
+    # 训练的时候，解码器的输出是一口气全部得到，因为这个时候输入是确定的（就是标签），
+    # 解码的时候，解码内容是一个一个单独出来的，无法一口气得到，特别是要做beamSearch的话，还要做动态规划
+    # 这个时候，如果还套用之前的attention，这个时候的decoder的状态就是长度就是1
 
-    infer_decoder_inputs =     Input(shape=(conf.INPUT_IMAGE_WIDTH/4,conf.CHARSET_SIZE), name='decoder_inputs')
+    # 解码器的输入，是一个one-hot字符
+    infer_decoder_inputs =     Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
+    # 编码器的所有状态
     infer_encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
+    # 解码器的隐状态输入
     infer_decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
 
     infer_decoder_out, infer_decoder_state = \
@@ -141,5 +166,6 @@ def model(conf,args):
     infer_decoder_model = Model(inputs=[infer_decoder_inputs, infer_encoder_out_states,infer_decoder_init_state],
                                 outputs=[infer_decoder_pred,infer_attn_states,infer_decoder_state])
     infer_decoder_model.summary()
+
 
     return train_model,infer_decoder_model,infer_encoder_model

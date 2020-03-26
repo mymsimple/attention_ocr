@@ -27,18 +27,22 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     fi
 
     echo "调试模式"
+    #    --validation_steps=1  \
+    # 测试：
+    # 训练：10张训练，但是steps_per_epoch=2，batch=3，预想6张后，就会重新shuffle
+    # 验证：使用sequence是不需要要validation_steps参数的，他会自己算，len(data)/batch
+    #      如果你规定，那就得比它小才可以，另外还要验证，是不是把每个批次的结果做平均，还是算整体的
     python -m main.train \
     --name=attention_ocr \
-    --epochs=100 \
-    --steps_per_epoch=3 \
-    --batch=3 \
+    --epochs=2 \
+    --steps_per_epoch=1 \
+    --batch=2 \
     --retrain=True \
     --learning_rate=0.001 \
-    --validation_steps=1  \
-    --validation_batch=8 \
+    --validation_batch=2 \
     --workers=1 \
-    --preprocess_num=5 \
-    --early_stop=10
+    --preprocess_num=1 \
+    --early_stop=3
 
     if [ "$1" == "debug" ]; then
         # 恢复源文件，防止git提交
@@ -60,11 +64,11 @@ echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 
 nohup python -m main.train \
     --name=attention_ocr \
-    --epochs=5000 \
+    --epochs=5000000 \
     --steps_per_epoch=1000 \
     --batch=64 \
     --retrain=True \
-    --learning_rate=0.001 \
+    --learning_rate=0.01 \
     --validation_batch=64 \
     --validation_steps=10 \
     --workers=10 \

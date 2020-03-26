@@ -61,8 +61,8 @@ class AttentionLayer(Layer):
         # 注意，encoder_out_seq是一个数组，长度是seq；decoder_out_seq是一个输出。
         encoder_out_seq, decoder_out_seq = inputs
 
-        encoder_out_seq = _p_shape(encoder_out_seq, "注意力调用：入参编码器输出序列：encoder_out_seq")
-        decoder_out_seq = _p_shape(decoder_out_seq, "注意力调用：入参解码器输出序列：decoder_out_seq")
+        # encoder_out_seq = _p_shape(encoder_out_seq, "注意力调用：入参编码器输出序列：encoder_out_seq")
+        # decoder_out_seq = _p_shape(decoder_out_seq, "注意力调用：入参解码器输出序列：decoder_out_seq")
 
         # 实现了能量函数，e_tj=V * tanh ( W * h_j + U * S_t-1 + b )
         # inputs,我理解就是所有的h_j，错！我之前理解错了，这个参数是指某个时刻t，对应的输入！不是所有，是某个时刻的输入。
@@ -72,13 +72,13 @@ class AttentionLayer(Layer):
         # 但是每一步都是encoder_out_seq全都参与运算的，
         # decoder_out一个和encoder_out_seq一串，对
         def energy_step(decode_outs, states): # decode_outs(batch,dim)
-            decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
+            # decode_outs = _p(decode_outs,"energy_step:decode_outs 算能量函数了..........") #decode_outs：[1，20]
             # decoder_seq [N,30,512] 30是字符串长度
             en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2] # 30, 512
             de_hidden = decode_outs.shape[-1]
             #  W * h_j
             reshaped_enc_outputs = K.reshape(encoder_out_seq, (-1, en_hidden)) #[b,64,512]=> [b*64,512]
-            _p(reshaped_enc_outputs,"reshaped_enc_outputs")
+            # _p(reshaped_enc_outputs,"reshaped_enc_outputs")
 
             # W_a[512x512],reshaped_enc_outputs[b*64,512] => [b*64,512] => [b,64,512]
             W_a_dot_s = K.reshape(K.dot(reshaped_enc_outputs, self.W_a), (-1, en_seq_len, en_hidden))
@@ -93,7 +93,7 @@ class AttentionLayer(Layer):
             e_i = K.reshape(K.dot(reshaped_Ws_plus_Uh, self.V_a), (-1, en_seq_len))
             # softmax(e_tj)
             e_i = K.softmax(e_i)
-            e_i = _p(e_i,"energy_step:e_i")
+            # e_i = _p(e_i,"energy_step:e_i")
             return e_i, [e_i]
 
         # 这个step函数有意思，特别要关注他的入参：
@@ -106,14 +106,14 @@ class AttentionLayer(Layer):
         #   代表当前时刻的样本 xt，而 states 是一个 list，代表 yt−1 及一些中间变量。"
         # e 是30次中的一次，他是一个64维度的概率向量
         def context_step(e, states): # e (batch,dim),其实每个输入就是一个e
-            e = _p(e,"context_step:e")
-            states = _p(states,"context_step:states")
+            # e = _p(e,"context_step:e")
+            # states = _p(states,"context_step:states")
             # encoder_out_seq[b,64,512] * e[64,1]
             # dot是矩阵相乘，*是对应位置元素相乘
             # [b,64,512] * e[64,1]shape不一样，居然也可以乘，我试了，没问题
             # 其实，就是实现了encoder ouput根据softmax概率分布，加权求和
             c_i = K.sum(encoder_out_seq * K.expand_dims(e, -1), axis=1)
-            c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")
+            # c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")
             return c_i, [c_i]
 
         #    (batch_size, enc_seq_len, latent_dim) (b,64,512)
@@ -159,11 +159,12 @@ class AttentionLayer(Layer):
         )
         # e_outputs [30,64]
 
-        e_outputs = _p_shape(e_outputs,"能量函数e输出：：：：")
+        # e_outputs = _p_shape(e_outputs,"能量函数e输出Shape：：：：")
+        # e_outputs = _p(e_outputs, "能量函数e输出：：：：")
         # shape[-1]是encoder的隐含层
         fake_state_c = create_inital_state(encoder_out_seq,encoder_out_seq.shape[-1])  #
         fake_state_c = _p_shape(fake_state_c, "fake_state_c")
-        # print("e_outputs:", e_outputs)
+
 
         ########### ########### ########### K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|K.rnn|
         last_out, c_outputs, _ = K.rnn( # context_step算注意力的期望，sum(eij*encoder_out), 输出的(batch,encoder_seq,)
@@ -172,11 +173,13 @@ class AttentionLayer(Layer):
             initial_states=[fake_state_c],
         )
         #c_outputs [b,64,512]
-        c_outputs = _p_shape(c_outputs,"注意力c输出：：：：")
+        # c_outputs = _p_shape(c_outputs,"注意力c输出Shape：：：：")
 
         # 输出：
         # 注意力c_outputs的向量(batch,图像seq,512)，
-        # 注意力e_outputs的向量(batch,图像seq,图像宽度/4)，
+        # 注意力e_outputs的向量(batch,图像seq)，
+        # 能量函数e输出：：：：[3 29 64]
+        # 注意力c输出：：：：  [3 29 1024]
         return c_outputs, e_outputs
 
     def compute_output_shape(self, input_shape):

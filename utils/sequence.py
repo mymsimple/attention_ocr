@@ -32,14 +32,12 @@ class SequenceData(Sequence):
     # 返回长度，我理解是一个epoch中的总步数
     # 'Denotes the number of batches per epoch'
     def __len__(self):
+        # logger.debug("[%s],__len__:%d",self.name,int(math.ceil(len(self.data_list) / self.batch_size)))
         return int(math.ceil(len(self.data_list) / self.batch_size))
 
-    # 即通过索引获取a[0],a[1]这种,idx是被shuffle后的索引，你获取数据的时候，需要[idx * self.batch_size : (idx + 1) * self.batch_size]
-    # 2019.12.30,piginzoo，
-    def __getitem__(self, idx):
-        start_time = time.time()
-        batch_data_list = self.data_list[ idx * self.batch_size : (idx + 1) * self.batch_size]
 
+    def load_image_label(self,batch_data_list):
+        # logger.debug("[%s]_getItem:batch_data_list:%r",self.name, batch_data_list)
         images_labelids = label_utils.process_lines(self.charsets,batch_data_list)
 
         # print(self.name,"Sequence PID:", os.getpid(),",idx=",idx)
@@ -55,10 +53,22 @@ class SequenceData(Sequence):
         labels = pad_sequences(labels,maxlen=self.conf.MAX_SEQUENCE,padding="post",value=0)
         labels = to_categorical(labels,num_classes=len(self.charsets))        #to_categorical之后的shape： [N,time_sequence(字符串长度),3773]
 
-        logger.debug("进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
-                    os.getpid(),
-                    idx,
-                    time.time()-start_time)
+        return images,labels
+
+    # 即通过索引获取a[0],a[1]这种,idx是被shuffle后的索引，你获取数据的时候，需要[idx * self.batch_size : (idx + 1) * self.batch_size]
+    # 2019.12.30,piginzoo，
+    def __getitem__(self, idx):
+        start_time = time.time()
+        # logger.debug("[%s]_getItem:idx:%r",self.name,idx)
+        batch_data_list = self.data_list[ idx * self.batch_size : (idx + 1) * self.batch_size]
+
+        images,labels = self.load_image_label(batch_data_list)
+
+        # logger.debug("[%s]进程[%d],加载一个批次数据，idx[%d],耗时[%f]",
+        #             self.name,
+        #             os.getpid(),
+        #             idx,
+        #             time.time()-start_time)
 
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
@@ -70,22 +80,22 @@ class SequenceData(Sequence):
 
     # 一次epoch后，重新shuffle一下样本
     def on_epoch_end(self):
-        np.random.shuffle(self.images_labels)
+        np.random.shuffle(self.data_list)
         duration = time.time() - self.start_time
         self.start_time = time.time()
-        logger.debug("本次Epoch结束，耗时[%d]秒，重新shuffle数据",duration)
+        logger.debug("[%s]本次Epoch结束，耗时[%d]秒，重新shuffle数据",self.name,duration)
 
     # 初始加载样本：即每一个文件的路径和对应的识别文字
     # 额外做两件事：
     # 1、check每一个图片文件是否存在
     # 2、看识别文字的字不在字表中，剔除这个样本
     def initialize(self,conf,args):
-        logger.info("开始加载[%s]样本和标注",self.name)
+        logger.info("[%s]开始加载样本和标注",self.name)
         start_time = time.time()
         self.data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
 
-        logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.data_list),(time.time() - start_time))
-
+        logger.info("[%s]加载了样本:[%d]个,耗时[%d]秒", self.name, len(self.data_list),(time.time() - start_time))
+        # logger.debug("initialize:datalist:%r",self.data_list)
         # logger.debug("使用[%d]个进程，开始并发处理所有的[%d]行标签数据", args.preprocess_num,len(data_list))
         # # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
         # pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致

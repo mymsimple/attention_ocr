@@ -54,7 +54,7 @@ def energy_step(S_t_1,): # inputs(batch,dim)
 
     # softmax(e_tj)
     e_i = K.softmax(e_i)
-    e_i = _p(e_i ,"energy_step:e_i")
+    # e_i = _p(e_i ,"energy_step:e_i")
     return e_i, [e_i]
 
 
