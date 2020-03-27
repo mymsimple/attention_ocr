@@ -19,6 +19,9 @@ logger = logging.getLogger("SequenceData")
 # 几个细节：
 # - 不用用多进程方式加载，不知道为何总是卡住，改成multiprocess=False,即使用多线程就好了,参考：https://stackoverflow.com/questions/54620551/confusion-about-multiprocessing-and-workers-in-keras-fit-generator-with-window
 # - on_epoch_end确实是所有的样本都轮完了，才回调一次，而，steps_per_epoch改变的是多久callback回调一次，这个可以调的更小一些，两者没关系
+# - (2020.3.27)on_epoch_end回调是所有的样本都完成，和steps_per_epoch无关，
+#              比如10000张样本，我batch设成100，但是steps_per_epoch设成50，
+#              那么，不是5000张就会调用on_epoch_end，还是要等到10000张都轮完了，才会回调这个方法
 class SequenceData(Sequence):
     def __init__(self, name,label_file, charset_file,conf,args,batch_size=32):
         self.conf = conf

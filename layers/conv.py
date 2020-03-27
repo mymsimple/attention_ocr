@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.keras.backend import squeeze
 import logging
 
+from utils.logger import _p
 logger = logging.getLogger(__name__)
 
 class Conv():
@@ -56,6 +57,7 @@ class Conv():
 
     #[N,1,256/4,512] => [N,256/4,512]
     def squeeze_wrapper(self,tensor):
+        tensor = _p(tensor,"卷积层输出")
         return squeeze(tensor, axis=1)
 
     # 自定义的卷基层，32x100 => 1 x 25，即（1/32，1/4)

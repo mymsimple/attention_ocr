@@ -31,6 +31,8 @@ class TBoardVisual(tf.keras.callbacks.Callback):
         # 随机取3张
         # logger.debug("self.validation_data:%r",self.validation_data)
 
+        # 先重排一下验证数据
+        np.random.shuffle(self.validation_data.data_list)
 
         data = self.validation_data.data_list[:9]
         images,labels = self.validation_data.load_image_label(data)

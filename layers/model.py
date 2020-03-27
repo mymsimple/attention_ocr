@@ -80,6 +80,9 @@ def model(conf,args):
                                        name='encoder_gru'),
                                    input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
                                    name='bidirectional_encoder')
+
+    # conv = _p(conv,"卷积层输出")
+
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态；None是序列长度，不定长
