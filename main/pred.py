@@ -74,7 +74,7 @@ def pred(args):
 
         attention_weights.append(attention)
 
-        pred_char = label_utils.id2str(decoder_index,charset=charset)
+        pred_char = label_utils.ids2str(decoder_index,charset=charset)
 
         logger.info("预测字符为:%s",pred_char)
         result+= pred_char

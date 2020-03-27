@@ -80,7 +80,7 @@ def train(args):
     # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
 
 
-    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name)
+    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset)
 
     model.fit_generator(
         generator=train_sequence,

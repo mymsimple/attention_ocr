@@ -53,15 +53,15 @@ def words_accuracy(y_true, y_pred):
 
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
-    # max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_p")
-    # max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_l")
+    max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_p")
+    max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_l")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
-    # correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的correct_pred")
+    correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的correct_pred")
     _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
-    # _result = _p_shape(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result的shape")
-    # _result = _p(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result")
+    _result = _p_shape(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result的shape")
+    _result = _p(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result")
     result = tf.reduce_mean(tf.cast(_result, tf.float32))
-    # result = _p(result, "DEBUG@@@,运行态的时候的words_accuracy的result")
+    result = _p(result, "DEBUG@@@,运行态的时候的words_accuracy的result")
     return result
 
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
@@ -105,7 +105,7 @@ def model(conf,args):
     # encoder_out shape=(?, 50, 512) 50是图像宽度/4 ,
     # decoder_out shape=(?, 30, 512) 30是要识别的字符串长度
     logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)
-    attn_out, attn_states = attn_layer([encoder_out, decoder_out])
+    attn_out, attn_states = attn_layer([encoder_out, decoder_out]) # c_outputs, e_outputs
 
     # concat Attention的输出 + GRU的输出
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])

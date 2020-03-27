@@ -110,7 +110,7 @@ class AttentionLayer(Layer):
             # states = _p(states,"context_step:states")
             # encoder_out_seq[b,64,512] * e[64,1]
             # dot是矩阵相乘，*是对应位置元素相乘
-            # [b,64,512] * e[64,1]shape不一样，居然也可以乘，我试了，没问题
+            # [b,64,512] * e[64,1]shape不一样，居然也可以乘，我试了，没问题 ===> [b,512,1]
             # 其实，就是实现了encoder ouput根据softmax概率分布，加权求和
             c_i = K.sum(encoder_out_seq * K.expand_dims(e, -1), axis=1)
             # c_i = _p(c_i,"context_step:c_i,算h的期望，也就是注意力了---------------------\n")

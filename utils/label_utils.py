@@ -15,13 +15,25 @@ def caculate_edit_distance(preds, labels):
     distances = [distance(p,l) for p,l in zip(preds, labels)]
     return sum(distances)/len(distances)
 
+# pred[seq,3770] => xxxx
+def prob2str(pred,charset):
+    # 得到当前时间的输出，是一个3770的概率分布，所以要argmax，得到一个id
+    decoder_index = np.argmax(pred, axis=-1) #decoder_index[seq]
+    logger.debug("decoder_index:%r",decoder_index)
+    return id2str(decoder_index,charset)
 
-def id2str(results,characters):
+# result[b,seq] => [xx,yy,..,zz]
+def ids2str(results,characters):
     values = []
-    for r in results:
-        str = [characters[id] for id in r]
-        values.append(''.join(c for c in str if c != '\n'))
+    for r in results: # 每个句子
+        values.append(id2str(r))
     return values
+
+# id[1,3,56,4,35...] => xyzqf...
+def id2str(ids,characters):
+    str = [characters[int(id)] for id in ids] # 每个字
+    result = ''.join(c for c in str if c != '\n')
+    return result
 
 
 # 加载字符集，charset.txt，最后一个是空格
