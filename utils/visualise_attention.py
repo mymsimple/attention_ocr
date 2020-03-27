@@ -57,8 +57,8 @@ class TBoardVisual(tf.keras.callbacks.Callback):
             image = images[i]
             label = labels[i]
 
-            logger.debug("label:%r",label)
-            logger.debug("output_prob:%r", output_prob[i])
+            # logger.debug("label:%r",label)
+            # logger.debug("output_prob:%r", output_prob[i])
 
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
@@ -88,7 +88,7 @@ class TBoardVisual(tf.keras.callbacks.Callback):
             x = max_index*4 # 4直接硬编码了
             y = 16 # 16也是直接硬编码了
 
-            logger.debug("注意力位置(%d,%d)",x,y)
+            # logger.debug("注意力位置(%d,%d)",x,y)
             cv2.circle(raw_image,(x,y),2, (0, 0, 255),2)
 
         height, width, channel = raw_image.shape

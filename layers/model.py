@@ -50,15 +50,12 @@ def words_accuracy(y_true, y_pred):
 
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
-    max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_pred")
-    max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_label")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
-    correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的正确(label vs pred)")
+    correct_pred = _p(correct_pred, "@@@,words_accuracy(字对字)")
     _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
-    _result = _p_shape(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result的shape")
-    _result = _p(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result")
+    _result = _p(_result, "@@@,words_accuracy(词对词)")
     result = tf.reduce_mean(tf.cast(_result, tf.float32))
-    result = _p(result, "DEBUG@@@,运行态的时候的words_accuracy的result")
+    result = _p(result, "@@@,words_accuracy正确率")
     return result
 
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量

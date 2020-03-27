@@ -65,8 +65,8 @@ echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 nohup python -m main.train \
     --name=attention_ocr \
     --epochs=5000000 \
-    --steps_per_epoch=500 \
-    --batch=64 \
+    --steps_per_epoch=50 \
+    --batch=16 \
     --retrain=True \
     --learning_rate=0.001 \
     --validation_batch=64 \

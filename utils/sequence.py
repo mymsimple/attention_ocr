@@ -37,7 +37,7 @@ class SequenceData(Sequence):
 
 
     def load_image_label(self,batch_data_list):
-        # logger.debug("[%s]_getItem:batch_data_list:%r",self.name, batch_data_list)
+        logger.debug("[%s]加载标签:%r",self.name, batch_data_list)
         images_labelids = label_utils.process_lines(self.charsets,batch_data_list)
 
         # print(self.name,"Sequence PID:", os.getpid(),",idx=",idx)
@@ -59,7 +59,7 @@ class SequenceData(Sequence):
     # 2019.12.30,piginzoo，
     def __getitem__(self, idx):
         start_time = time.time()
-        # logger.debug("[%s]_getItem:idx:%r",self.name,idx)
+        logger.debug("[%s]加载批次index:%r",self.name,idx)
         batch_data_list = self.data_list[ idx * self.batch_size : (idx + 1) * self.batch_size]
 
         images,labels = self.load_image_label(batch_data_list)
@@ -73,7 +73,7 @@ class SequenceData(Sequence):
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  decoder验证标签
-        logger.debug("加载批次数据：%r",images.shape)
+        # logger.debug("加载批次数据：%r",images.shape)
         # logger.debug("Decoder输入：%r", labels[:,:-1,:])
         # logger.debug("Decoder标签：%r", labels[:,1:,:])
         return [images,labels[:,:-1,:]],labels[:,1:,:]
