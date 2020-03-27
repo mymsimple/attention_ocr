@@ -66,9 +66,9 @@ nohup python -m main.train \
     --name=attention_ocr \
     --epochs=5000000 \
     --steps_per_epoch=1000 \
-    --batch=64 \
+    --batch=128 \
     --retrain=True \
-    --learning_rate=0.01 \
+    --learning_rate=0.001 \
     --validation_batch=64 \
     --validation_steps=10 \
     --workers=10 \
