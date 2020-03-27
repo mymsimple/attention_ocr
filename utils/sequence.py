@@ -74,8 +74,8 @@ class SequenceData(Sequence):
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  decoder验证标签
         logger.debug("加载批次数据：%r",images.shape)
-        logger.debug("Decoder输入：%r", labels[:,:-1,:])
-        logger.debug("Decoder标签：%r", labels[:,1:,:])
+        # logger.debug("Decoder输入：%r", labels[:,:-1,:])
+        # logger.debug("Decoder标签：%r", labels[:,1:,:])
         return [images,labels[:,:-1,:]],labels[:,1:,:]
 
     # 一次epoch后，重新shuffle一下样本

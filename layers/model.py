@@ -8,7 +8,6 @@
 from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import backend as K
 
 # from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 # from keras.models import Model
@@ -20,8 +19,6 @@ import tensorflow as tf
 import logging
 from utils.logger import _p_shape,_p
 logger = logging.getLogger("Model")
-
-conv = Conv()
 
 
 # 这个函数废弃了，改用tf自带的pad_seqence了
@@ -53,10 +50,10 @@ def words_accuracy(y_true, y_pred):
 
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
-    max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_p")
-    max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_l")
+    max_idx_p = _p(max_idx_p, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_pred")
+    max_idx_l = _p(max_idx_l, "DEBUG@@@,运行态的时候的words_accuracy的max_idx_label")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
-    correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的correct_pred")
+    correct_pred = _p(correct_pred, "DEBUG@@@,运行态的时候的words_accuracy的正确(label vs pred)")
     _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
     _result = _p_shape(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result的shape")
     _result = _p(_result, "DEBUG@@@,运行态的时候的words_accuracy的_result")
@@ -73,7 +70,7 @@ def model(conf,args):
 
     # input_image = Masking(0.0)(input_image) <----- 哭：卷基层不支持Mask，欲哭无泪：TypeError: Layer block1_conv1 does not support masking, but was passed an input_mask: Tensor("masking/Any_1:0", shape=(?, 32, ?), dtype=bool)
     # 1. 卷基层，输出是conv output is (Batch,Width/32,512)
-    conv_output = conv(input_image)
+    conv = Conv().build(input_image)
 
     # 经过padding后，转变为=>(Batch,50,512)
     # conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':conf.MASK_VALUE})(conv_output)
@@ -86,9 +83,9 @@ def model(conf,args):
                                        name='encoder_gru'),
                                    input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
                                    name='bidirectional_encoder')
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv_output)
+    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
 
-    # 3.Decoder GRU解码器，使用encoder的输出当做输入状态
+    # 3.Decoder GRU解码器，使用encoder的输出当做输入状态；None是序列长度，不定长
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
 
     # masked_decoder_inputs = Masking(conf.MASK_VALUE)(decoder_inputs)
@@ -108,6 +105,7 @@ def model(conf,args):
     attn_out, attn_states = attn_layer([encoder_out, decoder_out]) # c_outputs, e_outputs
 
     # concat Attention的输出 + GRU的输出
+    # decoder_out[B,Seq,512], attn_out[B,Seq,512]  ---concat---> [B,Seq,1024]
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
 
     # 5.Dense layer output layer 输出层
@@ -136,7 +134,7 @@ def model(conf,args):
     ### encoder model ###
 
     infer_input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
-    infer_conv_output = conv(infer_input_image) # 看！复用了 decoder_gru
+    infer_conv_output = Conv().build(infer_input_image) # 看！复用了 decoder_gru
     infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state = \
         encoder_bi_gru(infer_conv_output)
     infer_encoder_model = Model(inputs=infer_input_image,

@@ -3,30 +3,12 @@ from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Lambda
-from tensorflow.keras.layers import Layer
 from tensorflow.keras.backend import squeeze
-# from keras.layers import Conv2D
-# from keras.layers import LeakyReLU
-# from keras.layers import MaxPooling2D
-# from keras.layers import BatchNormalization
-# from keras.layers import Lambda
-# from keras.layers import Layer
-# from keras.backend import squeeze
-import tensorflow as tf
-
 import logging
 
 logger = logging.getLogger(__name__)
 
-class Conv(Layer):
-
-    #[N,1,256/4,512] => [N,256/4,512]
-    def squeeze_wrapper(self,tensor):
-        return squeeze(tensor, axis=1)
-
-    def __init__(self, **kwargs):
-        super(Conv, self).__init__(**kwargs)
-
+class Conv():
     '''
         #抽feature，用的cnn网络
         # https://blog.csdn.net/Quincuntial/article/details/77679463
@@ -70,17 +52,16 @@ class Conv(Layer):
           |
           20层
     '''
+
+    #[N,1,256/4,512] => [N,256/4,512]
+    def squeeze_wrapper(self,tensor):
+        return squeeze(tensor, axis=1)
+
+    def __init__(self, **kwargs):
+        super(Conv, self).__init__(**kwargs)
+
     # 自定义的卷基层，32x100 => 1 x 25，即（1/32，1/4)
-    def call(self,inputs):
-        x = inputs
-        for layer in self.layers:
-            # print(x)
-            x = layer(x)
-
-        return x
-
-
-    def build(self, input_shape):
+    def build(self, inputs):
         self.layers = []
         # Block 1
         self.layers.append(Conv2D(64, (3, 3), padding='same', name='block1_conv1'))
@@ -123,11 +104,9 @@ class Conv(Layer):
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
         self.layers.append(Lambda(self.squeeze_wrapper))
 
-        super(Conv, self).build(input_shape)
+        x = inputs
+        for layer in self.layers:
+            # print(x)
+            x = layer(x)
 
-    # input_shape[N,H,W,512] => output_shape[N,W/4,512]
-    def compute_output_shape(self, input_shape):
-        logger.debug("compute_output_shape:input_shape :%r",input_shape)
-        output_shape = (input_shape[0], int(input_shape[2] / 4), 512)
-        logger.debug("compute_output_shape:output_shape:%r",output_shape)
-        return output_shape
+        return x
