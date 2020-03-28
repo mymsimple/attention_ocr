@@ -1,5 +1,5 @@
 from utils import image_utils, label_utils
-import logging,math,os
+import logging,math
 import numpy as np
 
 from tensorflow.keras.utils import Sequence

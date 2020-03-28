@@ -20,8 +20,8 @@ def read_and_resize_image(image_names: list,conf):
             # 如果图像宽了，就直接resize到最大
             padded_image = cv2.resize(image,(conf.INPUT_IMAGE_WIDTH,conf.INPUT_IMAGE_HEIGHT))
         else:
-            # 否则，就给填充白色,[(0, 0),(0, dim_difference),(0,0)]=>[高前后忽略,宽前忽略尾部加，通道前后忽略]
-            padded_image = np.pad(image, [(0, 0),(0, dim_difference),(0,0)], 'constant',constant_values=(255))
+            # 否则，就给填充黑色,[(0, 0),(0, dim_difference),(0,0)]=>[高前后忽略,宽前忽略尾部加，通道前后忽略]
+            padded_image = np.pad(image, [(0, 0),(0, dim_difference),(0,0)], 'constant',constant_values=(0))
 
         # cv2.imwrite("data/test.jpg", padded_image)
         padded_images.append(padded_image)

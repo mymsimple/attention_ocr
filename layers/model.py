@@ -8,17 +8,19 @@
 from tensorflow.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 
 # from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 # from keras.models import Model
 # from keras.optimizers import Adam
+# from keras import backend as K
 
 from layers.conv import Conv
 from layers.attention import AttentionLayer
-import tensorflow as tf
 import logging
 from utils.logger import _p_shape,_p
 logger = logging.getLogger("Model")
+
 
 
 # 这个函数废弃了，改用tf自带的pad_seqence了
@@ -93,7 +95,8 @@ def model(conf,args):
     # GRU的units=GRU_HIDDEN_SIZE*2=512，是解码器GRU输出的维度，至于3770是之后，在做一个全连接才可以得到的
     # units指的是多少个隐含神经元，这个数量要和前面接的Bi-LSTM一致(他是512),这样，才可以接受前面的Bi-LSTM的输出作为他的初始状态输入
     decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
-    decoder_out, decoder_state = decoder_gru(decoder_inputs, initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
+    decoder_out, decoder_state = decoder_gru(decoder_inputs,
+                                    initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
 
     # 4.Attention layer注意力层
     attn_layer = AttentionLayer(name='attention_layer')
@@ -121,7 +124,7 @@ def model(conf,args):
 
     # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？
     # 这个疑惑在这个例子中看到答案：https://keras.io/examples/lstm_seq2seq/
-    # 我猜，keras的代码中应该是做了判断，如果是多个categorical_crossentropy，应该会tf.reduce_mean()一下吧。。。
+    # 我猜，keras的代码中应该是做了判断，如果是多个categorical_crossentropy，应该会K.reduce_mean()一下吧。。。
     train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[words_accuracy])
 
     train_model.summary()

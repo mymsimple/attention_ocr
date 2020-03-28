@@ -54,7 +54,7 @@ fi
 
 if [ "$1" = "stop" ]; then
     echo "停止训练"
-    ps aux|grep python|grep attention_ocr|awk '{print $2}'|xargs kill -9
+    ps aux|grep python|grep name=attention_ocr|awk '{print $2}'|xargs kill -9
     exit
 fi
 

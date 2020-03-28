@@ -1,7 +1,10 @@
 import tensorflow as tf
 import logging
-from tensorflow.keras import backend as K
 from utils import label_utils
+# from keras import backend as K
+from keras.callbacks import Callback
+from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import Callback
 import numpy as np
 import cv2
 from PIL import Image, ImageDraw, ImageFont
@@ -17,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class TBoardVisual(tf.keras.callbacks.Callback):
+class TBoardVisual(Callback):
 
     def __init__(self, tag,tboard_dir,charset):
         super().__init__()
