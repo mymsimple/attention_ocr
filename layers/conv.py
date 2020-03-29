@@ -4,6 +4,7 @@ from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.backend import squeeze
+import tensorflow.keras.backend as K
 import logging
 # from keras.layers import Conv2D
 # from keras.layers import LeakyReLU
@@ -68,7 +69,6 @@ class Conv():
 
     # 自定义的卷基层，32x100 => 1 x 25，即（1/32，1/4)
     def build(self, inputs):
-        self.layers = []
         # Block 1
         x = Conv2D(64, (3, 3), padding='same', name='block1_conv1')(inputs)
         x = LeakyReLU()(x)
@@ -109,5 +109,5 @@ class Conv():
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
         x = Lambda(self.squeeze_wrapper)(x)
-
+        # x = K.squeeze(x, axis=1)
         return x

@@ -6,11 +6,14 @@ import datetime
 import tensorflow as tf
 debug=True
 
+from tensorflow.keras import backend as K
+
 def _p(tensor,msg):
     if (debug):
         dt = datetime.datetime.now().strftime('TF_DEBUG: %m-%d %H:%M:%S: ')
         msg = dt +  msg
-        return tf.Print(tensor, [tensor], msg,summarize= 100)
+        # return K.print_tensor(tensor, msg)
+        return tf.Print(tensor, [tensor], msg, summarize=100)
     else:
         return tensor
 
