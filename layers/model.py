@@ -10,7 +10,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 
-from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
+# from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 # from keras.models import Model
 # from keras.optimizers import Adam
 # from keras import backend as K
@@ -101,7 +101,6 @@ def model(conf,args):
     decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
     decoder_out, decoder_state = decoder_gru(decoder_inputs,
                                     initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
-
 
     # 4.Attention layer注意力层
     attn_layer = AttentionLayer(name='attention_layer')

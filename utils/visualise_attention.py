@@ -52,8 +52,7 @@ class TBoardVisual(Callback):
         # 返回注意力分布[B,Seq,W/4]和识别概率[B,Seq,Charset]
         e_outputs_data,output_prob = functor([ images,labels[:,:-1,:],True])
 
-        # logger.debug("images shape = %r,e_outputs_data=%r",
-        #              images.shape,e_outputs_data[0].shape)
+        logger.debug("预测结果：images shape = %r,e_outputs_data=%r",images.shape,e_outputs_data.shape)
         writer = tf.summary.FileWriter(self.tboard_dir)
 
 
@@ -62,8 +61,6 @@ class TBoardVisual(Callback):
             image = images[i]
             label = labels[i]
 
-            # logger.debug("label:%r",label)
-            # logger.debug("output_prob:%r", output_prob[i])
 
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
@@ -74,7 +71,7 @@ class TBoardVisual(Callback):
 
 
             # logger.debug("image.shape:%r,e_output.shape:%r",image.shape,e_output.shape)
-            tf_img = self.make_image(image, e_output,label,pred)
+            tf_img = self.make_image(image, e_outputs_data,label,pred)
             summary = tf.Summary(value=[tf.Summary.Value(tag="{}/{}".format(self.tag,i),image=tf_img)])
             writer.add_summary(summary, epoch)
 
@@ -85,16 +82,21 @@ class TBoardVisual(Callback):
 
     def make_image(self,raw_image,e_output,label,pred):
 
-        for seq_img_distribute in e_output:
-            # seq_img_distribute,是对一个字的图像的概率分布，比如识别出来是ABC，图像是256，那么，就会有3个分布，可以再图像上根据这个分布画3个焦点
-            # logger.debug(seq_img_distribute.shape) # =>64
+        logger.debug("注意力分布：%r", e_output)
+        logger.debug("注意力分布shape：%r",e_output.shape)
 
-            max_index = np.argmax(seq_img_distribute)
-            x = max_index*4 # 4直接硬编码了
-            y = 16 # 16也是直接硬编码了
+        for words_distribute in e_output:
+            logger.debug("一句话的分布：%r",words_distribute.shape)
+            for w_distribute in words_distribute:
+                # seq_img_distribute,是对一个字的图像的概率分布，比如识别出来是ABC，图像是256，那么，就会有3个分布，可以再图像上根据这个分布画3个焦点
+                logger.debug("字的分布shape:%r", w_distribute.shape)  # =>64
+                max_index = np.argmax(w_distribute)
+                logger.debug("字的索引号:%r", max_index)
+                x = max_index*4 # 4直接硬编码了
+                y = 16 # 16也是直接硬编码了
 
-            # logger.debug("注意力位置(%d,%d)",x,y)
-            cv2.circle(raw_image,(x,y),2, (0, 0, 255),2)
+                logger.debug("注意力位置(%d,%d)",x,y)
+                cv2.circle(raw_image,(x,y),2, (0, 0, 255),2)
 
         height, width, channel = raw_image.shape
 

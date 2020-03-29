@@ -19,7 +19,7 @@ def caculate_edit_distance(preds, labels):
 def prob2str(pred,charset):
     # 得到当前时间的输出，是一个3770的概率分布，所以要argmax，得到一个id
     decoder_index = np.argmax(pred, axis=-1) #decoder_index[seq]
-    logger.debug("decoder_index:%r",decoder_index)
+    # logger.debug("decoder_index:%r",decoder_index)
     return id2str(decoder_index,charset)
 
 # result[b,seq] => [xx,yy,..,zz]

@@ -109,5 +109,5 @@ class Conv():
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
         x = Lambda(self.squeeze_wrapper)(x)
-        # x = K.squeeze(x, axis=1)
+
         return x
