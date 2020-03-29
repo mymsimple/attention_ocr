@@ -40,20 +40,20 @@ class TBoardVisual(Callback):
         data = self.validation_data.data_list[:9]
         images,labels = self.validation_data.load_image_label(data)
 
-        e_outputs = self.model.get_layer('attention_layer').output[1] #注意力层返回的是：return c_outputs, e_outputs
+        keras = self.model.get_layer('attention_layer').output[1] #注意力层返回的是：return c_outputs, keras
 
 
-        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [e_outputs,self.model.output])
+        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [keras,self.model.output])
 
         # 调试用
         # import pdb;
         # pdb.set_trace()
 
         # 返回注意力分布[B,Seq,W/4]和识别概率[B,Seq,Charset]
-        e_outputs_data,output_prob = functor([ images,labels[:,:-1,:],True])
+        keras_data,output_prob = functor([ images,labels[:,:-1,:],True])
 
-        # logger.debug("images shape = %r,e_outputs_data=%r",
-        #              images.shape,e_outputs_data[0].shape)
+        # logger.debug("images shape = %r,keras_data=%r",
+        #              images.shape,keras_data[0].shape)
         writer = tf.summary.FileWriter(self.tboard_dir)
 
 
@@ -67,7 +67,7 @@ class TBoardVisual(Callback):
 
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
-            e_output = e_outputs_data[0][i]
+            e_output = keras_data[0][i]
 
             logger.debug("label字符串:%r",label)
             logger.debug("pred字符串 :%r",pred)
@@ -85,9 +85,10 @@ class TBoardVisual(Callback):
 
     def make_image(self,raw_image,e_output,label,pred):
 
+        logger.debug("注意力的shape", e_output.shape)  # =>64
         for seq_img_distribute in e_output:
             # seq_img_distribute,是对一个字的图像的概率分布，比如识别出来是ABC，图像是256，那么，就会有3个分布，可以再图像上根据这个分布画3个焦点
-            # logger.debug(seq_img_distribute.shape) # =>64
+
 
             max_index = np.argmax(seq_img_distribute)
             x = max_index*4 # 4直接硬编码了

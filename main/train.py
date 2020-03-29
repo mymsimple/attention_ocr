@@ -4,8 +4,8 @@ from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
 import os
-from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
-from tensorflow.keras.models import load_model
+from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+from keras.models import load_model
 
 # from keras.models import load_model
 # from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
@@ -27,7 +27,7 @@ def train(args):
     charset = label_utils.get_charset(conf.CHARSET)
     conf.CHARSET_SIZE = len(charset)
 
-    model, _, _ = _model.model(conf, args)
+    model = _model.model(conf, args)
     # K.get_session().run(tf.global_variables_initializer())
     train_sequence = SequenceData(name="训练",
                                   label_file=args.train_label_file,

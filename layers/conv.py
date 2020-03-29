@@ -1,10 +1,10 @@
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Lambda
-from tensorflow.keras.backend import squeeze
-import tensorflow.keras.backend as K
+from keras.layers import Conv2D
+from keras.layers import LeakyReLU
+from keras.layers import MaxPooling2D
+from keras.layers import BatchNormalization
+from keras.layers import Lambda
+from keras.backend import squeeze
+import keras.backend as K
 import logging
 # from keras.layers import Conv2D
 # from keras.layers import LeakyReLU

@@ -2,9 +2,9 @@ from utils import image_utils, label_utils
 import logging,math
 import numpy as np
 
-from tensorflow.keras.utils import Sequence
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.utils import to_categorical
+from keras.utils import Sequence
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
 
 # from keras.utils import Sequence
 # from keras.preprocessing.sequence import pad_sequences

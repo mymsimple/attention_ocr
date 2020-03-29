@@ -1,10 +1,54 @@
+import tensorflow as tf
 from keras import backend as K
 from keras import regularizers, constraints, initializers, activations
-from keras.layers.recurrent import Recurrent, _time_distributed_dense
+from keras.layers.recurrent import Recurrent
 from keras.engine import InputSpec
 
 tfPrint = lambda d, T: tf.Print(input_=T, data=[T, tf.shape(T)], message=d)
 
+def _time_distributed_dense(x, w, b=None, dropout=None,
+                            input_dim=None, output_dim=None,
+                            timesteps=None, training=None):
+    """Apply `y . w + b` for every temporal slice y of x.
+    # Arguments
+        x: input tensor.
+        w: weight matrix.
+        b: optional bias vector.
+        dropout: wether to apply dropout (same dropout mask
+            for every temporal slice of the input).
+        input_dim: integer; optional dimensionality of the input.
+        output_dim: integer; optional dimensionality of the output.
+        timesteps: integer; optional number of timesteps.
+        training: training phase tensor or boolean.
+    # Returns
+        Output tensor.
+    """
+    if not input_dim:
+        input_dim = K.shape(x)[2]
+    if not timesteps:
+        timesteps = K.shape(x)[1]
+    if not output_dim:
+        output_dim = K.shape(w)[1]
+
+    if dropout is not None and 0. < dropout < 1.:
+        # apply the same dropout pattern at every timestep
+        ones = K.ones_like(K.reshape(x[:, 0, :], (-1, input_dim)))
+        dropout_matrix = K.dropout(ones, dropout)
+        expanded_dropout_matrix = K.repeat(dropout_matrix, timesteps)
+        x = K.in_train_phase(x * expanded_dropout_matrix, x, training=training)
+
+    # collapse time dimension and batch dimension together
+    x = K.reshape(x, (-1, input_dim))
+    x = K.dot(x, w)
+    if b is not None:
+        x = K.bias_add(x, b)
+    # reshape to 3D tensor
+    if K.backend() == 'tensorflow':
+        x = K.reshape(x, K.stack([-1, timesteps, output_dim]))
+        x.set_shape([None, None, output_dim])
+    else:
+        x = K.reshape(x, (-1, timesteps, output_dim))
+    return x
 
 class AttentionDecoder(Recurrent):
 
@@ -26,7 +70,6 @@ class AttentionDecoder(Recurrent):
         encoder and outputs the decoded states
         :param units: dimension of the hidden state and the attention matrices
         :param output_dim: the number of labels in the output space
-
         references:
             Bahdanau, Dzmitry, Kyunghyun Cho, and Yoshua Bengio.
             "Neural machine translation by jointly learning to align and translate."
@@ -108,7 +151,7 @@ class AttentionDecoder(Recurrent):
                                    initializer=self.recurrent_initializer,
                                    regularizer=self.recurrent_regularizer,
                                    constraint=self.recurrent_constraint)
-        self.b_r = self.add_weight(shape=(self.units,),
+        self.b_r = self.add_weight(shape=(self.units, ),
                                    name='b_r',
                                    initializer=self.bias_initializer,
                                    regularizer=self.bias_regularizer,
@@ -132,7 +175,7 @@ class AttentionDecoder(Recurrent):
                                    initializer=self.recurrent_initializer,
                                    regularizer=self.recurrent_regularizer,
                                    constraint=self.recurrent_constraint)
-        self.b_z = self.add_weight(shape=(self.units,),
+        self.b_z = self.add_weight(shape=(self.units, ),
                                    name='b_z',
                                    initializer=self.bias_initializer,
                                    regularizer=self.bias_regularizer,
@@ -155,7 +198,7 @@ class AttentionDecoder(Recurrent):
                                    initializer=self.recurrent_initializer,
                                    regularizer=self.recurrent_regularizer,
                                    constraint=self.recurrent_constraint)
-        self.b_p = self.add_weight(shape=(self.units,),
+        self.b_p = self.add_weight(shape=(self.units, ),
                                    name='b_p',
                                    initializer=self.bias_initializer,
                                    regularizer=self.bias_regularizer,
@@ -178,7 +221,7 @@ class AttentionDecoder(Recurrent):
                                    initializer=self.recurrent_initializer,
                                    regularizer=self.recurrent_regularizer,
                                    constraint=self.recurrent_constraint)
-        self.b_o = self.add_weight(shape=(self.output_dim,),
+        self.b_o = self.add_weight(shape=(self.output_dim, ),
                                    name='b_o',
                                    initializer=self.bias_initializer,
                                    regularizer=self.bias_regularizer,
@@ -210,6 +253,8 @@ class AttentionDecoder(Recurrent):
         return super(AttentionDecoder, self).call(x)
 
     def get_initial_state(self, inputs):
+        print('inputs shape:', inputs.get_shape())
+
         # apply the matrix on the first time step to get the initial s0.
         s0 = activations.tanh(K.dot(inputs[:, 0], self.W_s))
 
@@ -267,7 +312,7 @@ class AttentionDecoder(Recurrent):
             + self.b_p)
 
         # new hidden state:
-        st = (1 - zt) * stm + zt * s_tp
+        st = (1-zt)*stm + zt * s_tp
 
         yt = activations.softmax(
             K.dot(ytm, self.W_o)
@@ -300,3 +345,14 @@ class AttentionDecoder(Recurrent):
         }
         base_config = super(AttentionDecoder, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+# check to see if it compiles
+if __name__ == '__main__':
+    from keras.layers import Input, LSTM
+    from keras.models import Model
+    from keras.layers.wrappers import Bidirectional
+    i = Input(shape=(100,104), dtype='float32')
+    enc = Bidirectional(LSTM(64, return_sequences=True), merge_mode='concat')(i)
+    dec = AttentionDecoder(32, 4)(enc)
+    model = Model(inputs=i, outputs=dec)
+    model.summary()
