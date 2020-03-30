@@ -89,13 +89,13 @@ class TBoardVisual(Callback):
             logger.debug("一句话的分布：%r",words_distribute.shape)
             for w_distribute in words_distribute:
                 # seq_img_distribute,是对一个字的图像的概率分布，比如识别出来是ABC，图像是256，那么，就会有3个分布，可以再图像上根据这个分布画3个焦点
-                logger.debug("字的分布shape:%r", w_distribute.shape)  # =>64
+                # logger.debug("字的分布shape:%r", w_distribute.shape)  # =>64
                 max_index = np.argmax(w_distribute)
-                logger.debug("字的索引号:%r", max_index)
+                # logger.debug("字的索引号:%r", max_index)
                 x = max_index*4 # 4直接硬编码了
                 y = 16 # 16也是直接硬编码了
 
-                logger.debug("注意力位置(%d,%d)",x,y)
+                # logger.debug("注意力位置(%d,%d)",x,y)
                 cv2.circle(raw_image,(x,y),2, (0, 0, 255),2)
 
         height, width, channel = raw_image.shape
