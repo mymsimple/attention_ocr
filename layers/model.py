@@ -51,14 +51,15 @@ def model(conf,args):
 
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
 
-    decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
+    # decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
 
     attn_layer = AttentionDecoder(units=conf.GRU_HIDDEN_SIZE,output_dim=conf.GRU_HIDDEN_SIZE)
 
-    logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)
-    attn_out, attn_states = attn_layer(encoder_out) # c_outputs, e_outputs
+    logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r",encoder_out)
+    attn_out = attn_layer(encoder_out) # c_outputs, e_outputs
+    logger.debug("模型Attention输出的张量[attn_out]:%r", attn_out)
 
-    train_model = Model(inputs=[input_image, decoder_inputs], outputs=[attn_out,attn_states])
+    train_model = Model(inputs=[input_image, decoder_inputs], outputs=[attn_out])
     opt = Adam(lr=args.learning_rate)
 
     train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[words_accuracy])

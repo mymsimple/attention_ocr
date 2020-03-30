@@ -50,6 +50,11 @@ def _time_distributed_dense(x, w, b=None, dropout=None,
         x = K.reshape(x, (-1, timesteps, output_dim))
     return x
 
+# 参考：
+# https://github.com/datalogue/keras-attention  代码
+# https://medium.com/datalogue/attention-in-keras-1892773a4f22 文章
+# 实际上是实现了一个自定义的LSTM和一个Attention的合体
+# LSTM结构参考：https://colah.github.io/posts/2015-08-Understanding-LSTMs/
 class AttentionDecoder(Recurrent):
 
     def __init__(self, units, output_dim,
@@ -110,7 +115,7 @@ class AttentionDecoder(Recurrent):
         self.states = [None, None]  # y, s
 
         """
-            Matrices for creating the context vector
+            Matrices for creating the context vector，a:注意力
         """
 
         self.V_a = self.add_weight(shape=(self.units,),
@@ -134,7 +139,7 @@ class AttentionDecoder(Recurrent):
                                    regularizer=self.bias_regularizer,
                                    constraint=self.bias_constraint)
         """
-            Matrices for the r (reset) gate
+            Matrices for the r (reset) gate r:重置门
         """
         self.C_r = self.add_weight(shape=(self.input_dim, self.units),
                                    name='C_r',
@@ -158,7 +163,7 @@ class AttentionDecoder(Recurrent):
                                    constraint=self.bias_constraint)
 
         """
-            Matrices for the z (update) gate
+            Matrices for the z (update) gate，z:更新门
         """
         self.C_z = self.add_weight(shape=(self.input_dim, self.units),
                                    name='C_z',
@@ -284,6 +289,7 @@ class AttentionDecoder(Recurrent):
         at = K.exp(et)
         at_sum = K.sum(at, axis=1)
         at_sum_repeated = K.repeat(at_sum, self.timesteps)
+        # 实际上这里的at是一个softmax！
         at /= at_sum_repeated  # vector of size (batchsize, timesteps, 1)
 
         # calculate the context vector
@@ -314,6 +320,7 @@ class AttentionDecoder(Recurrent):
         # new hidden state:
         st = (1-zt)*stm + zt * s_tp
 
+        # 最终，上一时刻的概率
         yt = activations.softmax(
             K.dot(ytm, self.W_o)
             + K.dot(stm, self.U_o)
