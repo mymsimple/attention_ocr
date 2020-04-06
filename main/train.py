@@ -1,14 +1,10 @@
 from layers import model as _model
 from layers.conv import Conv
-from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
 import os
-from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from keras.models import load_model
-
-# from keras.models import load_model
-# from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 
 from main import conf
 import logging
@@ -56,8 +52,7 @@ def train(args):
             model = load_model(_checkpoint_path,
                 custom_objects={
                     'words_accuracy': _model.words_accuracy,
-                    'Conv':Conv,
-                    'AttentionLayer':AttentionLayer})
+                    'Conv':Conv})
             logger.info("加载checkpoint模型[%s]", _checkpoint_path)
         else:
             logger.warning("找不到任何checkpoint，重新开始训练")
@@ -80,7 +75,7 @@ def train(args):
     # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
 
 
-    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset)
+    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset,valid_sequence)
 
     model.fit_generator(
         generator=train_sequence,

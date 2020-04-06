@@ -1,14 +1,10 @@
 import tensorflow as tf
-import logging
-from utils import label_utils
-# from keras import backend as K
-from keras.callbacks import Callback
-from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import Callback
 import numpy as np
-import cv2
+import logging,io,cv2
+from utils import label_utils
+from keras import backend as K
+from keras.callbacks import Callback
 from PIL import Image, ImageDraw, ImageFont
-import io
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +13,15 @@ logger = logging.getLogger(__name__)
 # 1、raw_image是resize之后的
 # 2、image_width/4，也就是256/4，是64
 # 3、seq最长是30，但是也可能是提前结束ETX了
-
-
-
 class TBoardVisual(Callback):
 
-    def __init__(self, tag,tboard_dir,charset):
+    def __init__(self, tag,tboard_dir,charset,validation_data=None):
         super().__init__()
         self.tag = tag
         self.tboard_dir = tboard_dir
         self.charset = charset
         self.font = ImageFont.truetype("data/font/simsun.ttc", 10)  # 设置字体
+        if validation_data: self.validation_data = validation_data
 
 
     def on_epoch_end(self, epoch, logs):
@@ -40,20 +34,19 @@ class TBoardVisual(Callback):
         data = self.validation_data.data_list[:9]
         images,labels = self.validation_data.load_image_label(data)
 
-        keras = self.model.get_layer('attention_layer').output[1] #注意力层返回的是：return c_outputs, keras
+        attentions_tensor = self.model.get_layer('Lambda_attn').output[1] #注意力层返回的是：return c_outputs, keras
 
+        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [attentions_tensor,self.model.output])
 
-        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [keras,self.model.output])
+        # 返回注意力分布[B,Seq,W/4]和识别概率[B,Seq,Charset]
+        attentions, output_prob = functor([images, labels[:, :-1, :], True])
 
         # 调试用
         # import pdb;
         # pdb.set_trace()
 
-        # 返回注意力分布[B,Seq,W/4]和识别概率[B,Seq,Charset]
-        keras_data,output_prob = functor([ images,labels[:,:-1,:],True])
-
-        # logger.debug("images shape = %r,keras_data=%r",
-        #              images.shape,keras_data[0].shape)
+        logger.debug("images shape = %r,attentions=%r",
+                     images.shape,attentions[0].shape)
         writer = tf.summary.FileWriter(self.tboard_dir)
 
 
@@ -67,7 +60,7 @@ class TBoardVisual(Callback):
 
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
-            e_output = keras_data[0][i]
+            e_output = attentions[0][i]
 
             logger.debug("label字符串:%r",label)
             logger.debug("pred字符串 :%r",pred)

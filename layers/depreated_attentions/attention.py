@@ -12,6 +12,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+
 # 实现了经典的attention模式：https://arxiv.org/pdf/1409.0473.pdf
 # 具体参考这篇文章：https://towardsdatascience.com/light-on-math-ml-attention-with-keras-dc8dbc1fad39
 class AttentionLayer(Layer):

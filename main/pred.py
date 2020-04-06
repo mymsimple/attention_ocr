@@ -3,8 +3,8 @@ from main import conf
 from layers import model as _model
 import logging,cv2
 import numpy as np
-from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
+from keras.preprocessing.sequence import pad_sequences
 
 logger = logging.getLogger("Train")
 

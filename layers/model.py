@@ -9,9 +9,9 @@ from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistr
 import tensorflow as tf
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
+from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,Lambda
 from layers.conv import Conv
-from layers.attention_layer import AttentionDecoder
+from layers.attention_gru import AttentionGRU
 import logging
 from utils.logger import _p_shape,_p
 logger = logging.getLogger("Model")
@@ -33,6 +33,7 @@ def words_accuracy(y_true, y_pred):
 def model(conf,args):
 
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
+    decoder_inputs = Input(shape=(None, conf.CHARSET_SIZE), name='decoder_inputs')
 
     conv = Conv().build(input_image)
 
@@ -43,25 +44,43 @@ def model(conf,args):
                                    input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
                                    name='bidirectional_encoder')
 
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
+    encoder_outs, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
 
-    logger.debug("双向输出encoder_out：\t%r",encoder_out.shape)
+    logger.debug("双向输出encoder_outs：\t%r",encoder_outs.shape)
     logger.debug("双向输出encoder_fwd_state：\t%r", encoder_fwd_state.shape)
     logger.debug("双向输出encoder_back_state：\t%r", encoder_back_state.shape)
 
-    decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
+    # 这里有个trick，解码器的GRU
+    attn_decocder = AttentionGRU(units=conf.GRU_HIDDEN_SIZE * 2 ,
+                                 return_sequences=True,
+                                 name="attention_gru_decoder")
 
-    # decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
+    decoder_initial_state = Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state])
 
-    attn_layer = AttentionDecoder(units=conf.GRU_HIDDEN_SIZE,output_dim=conf.GRU_HIDDEN_SIZE)
+    logger.debug("模型Attention调用的张量encoder_outs:%r",encoder_outs)
 
-    logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r",encoder_out)
-    attn_out = attn_layer(encoder_out) # c_outputs, e_outputs
-    logger.debug("模型Attention输出的张量[attn_out]:%r", attn_out)
 
-    train_model = Model(inputs=[input_image, decoder_inputs], outputs=[attn_out])
+    attn_decoder_outputs = attn_decocder(inputs=decoder_inputs,
+                             training = True,
+                             initial_state=decoder_initial_state,
+                             constants=encoder_outs)
+
+    logger.debug("AttentionGRU输出的张量[attn_decoder_outputs]:[%r]", attn_decoder_outputs)
+
+    attns = Lambda(lambda x: x[:,:,:64], name="Lambda_attn")(attn_decoder_outputs)
+
+    decoder_outputs = Lambda(lambda x: x[:,:,64:], name="Lambda_decoder")(attn_decoder_outputs)
+
+    logger.debug("AttentionGRU输出的张量[atten,attn_out]:[%r,%r]",attns,decoder_outputs)
+
+    # TimeDistributed，帮助所有的time sequence共享一个Dense（全连接）参数
+    dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
+    dense_time = TimeDistributed(dense, name='time_distributed_layer')
+    decoder_pred = dense_time(decoder_outputs)
+
+    train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_pred)
+
     opt = Adam(lr=args.learning_rate)
-
     train_model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=[words_accuracy])
 
     train_model.summary()

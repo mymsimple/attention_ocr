@@ -8,12 +8,21 @@ CHAR_ETX = "\x03"
 CHAR_STX = "\x02"
 CHAR_NULL = " "
 
+# 本地调试用
+MAX_SEQUENCE = 10        # 最大的识别汉字的长度
+MASK_VALUE = 0
+CHARSET = "data/charset.txt" # 3770的一级字库
+INPUT_IMAGE_HEIGHT = 32  # 图像归一化的高度
+INPUT_IMAGE_WIDTH = 128  # 最大的图像宽度
+GRU_HIDDEN_SIZE = 16     # GRU隐含层神经元数量
+
+# 正式
 MAX_SEQUENCE = 30        # 最大的识别汉字的长度
 MASK_VALUE = 0
 CHARSET = "data/charset.txt" # 3770的一级字库
 INPUT_IMAGE_HEIGHT = 32  # 图像归一化的高度
 INPUT_IMAGE_WIDTH = 256  # 最大的图像宽度
-GRU_HIDDEN_SIZE = 256     # GRU隐含层神经元数量
+GRU_HIDDEN_SIZE = 256    # GRU隐含层神经元数量
 
 DIR_LOGS="logs"
 DIR_TBOARD="logs/tboard"

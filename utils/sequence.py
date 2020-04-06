@@ -1,15 +1,9 @@
 from utils import image_utils, label_utils
 import logging,math
 import numpy as np
-
 from keras.utils import Sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
-
-# from keras.utils import Sequence
-# from keras.preprocessing.sequence import pad_sequences
-# from keras.utils import to_categorical
-
 import time
 
 logger = logging.getLogger("SequenceData")
