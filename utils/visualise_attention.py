@@ -34,17 +34,18 @@ class TBoardVisual(Callback):
         data = self.validation_data.data_list[:9]
         images,labels = self.validation_data.load_image_label(data)
 
-        attentions_tensor = self.model.get_layer('Lambda_attn').output[1] #注意力层返回的是：return c_outputs, keras
+        attentions_gru_tensor = self.model.get_layer('attention_gru_decoder').output # 注意力层返回的是：return c_outputs, keras
 
-        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [attentions_tensor,self.model.output])
+        functor = K.function([self.model.input[0],self.model.input[1],K.learning_phase()], [attentions_gru_tensor,self.model.output])
 
         # 返回注意力分布[B,Seq,W/4]和识别概率[B,Seq,Charset]
-        attentions, output_prob = functor([images, labels[:, :-1, :], True])
+        attention_gru_outputs, output_prob = functor([images, labels[:, :-1, :], True])
 
         # 调试用
         # import pdb;
         # pdb.set_trace()
 
+        attentions = attention_gru_outputs[:,:,:64]
         logger.debug("images shape = %r,attentions=%r",
                      images.shape,attentions[0].shape)
         writer = tf.summary.FileWriter(self.tboard_dir)
@@ -78,7 +79,7 @@ class TBoardVisual(Callback):
 
     def make_image(self,raw_image,e_output,label,pred):
 
-        logger.debug("注意力的shape", e_output.shape)  # =>64
+        logger.debug("注意力的shape:%r", e_output.shape)  # =>64
         for seq_img_distribute in e_output:
             # seq_img_distribute,是对一个字的图像的概率分布，比如识别出来是ABC，图像是256，那么，就会有3个分布，可以再图像上根据这个分布画3个焦点
 
