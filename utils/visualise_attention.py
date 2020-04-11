@@ -48,6 +48,7 @@ class TBoardVisual(Callback):
         attentions = attention_gru_outputs[:,:,:64]
         logger.debug("images shape = %r,attentions=%r",
                      images.shape,attentions[0].shape)
+        logger.debug("注意力输出[0][0]：%r",attentions[0][0])
         writer = tf.summary.FileWriter(self.tboard_dir)
 
 
@@ -65,7 +66,6 @@ class TBoardVisual(Callback):
 
             logger.debug("label字符串:%r",label)
             logger.debug("pred字符串 :%r",pred)
-
 
             # logger.debug("image.shape:%r,e_output.shape:%r",image.shape,e_output.shape)
             tf_img = self.make_image(image, e_output,label,pred)

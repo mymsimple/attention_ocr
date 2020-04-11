@@ -11,8 +11,10 @@ def _p(tensor,msg):
     if (debug):
         dt = datetime.datetime.now().strftime('TF_DEBUG: %m-%d %H:%M:%S: ')
         msg = dt +  msg
-        return K.print_tensor(tensor, msg)
+        # return K.print_tensor(tensor, msg)
         # return tf.Print(tensor, [tensor], msg, summarize=100)
+        tfPrint = lambda T,msg: K.print_tensor(T, msg)
+        return tfPrint(tensor,msg)
     else:
         return tensor
 

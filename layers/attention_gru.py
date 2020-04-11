@@ -6,7 +6,7 @@ from keras import constraints
 from keras.engine.base_layer import Layer
 from keras.layers import RNN
 import logging
-
+from utils.logger import _p
 logger = logging.getLogger(__name__)
 
 '''
@@ -98,6 +98,7 @@ class AttentionGRUCell(Layer):
             encoder_dim = 0
         # 注意力参数维度计算
         attention_dim = encoder_dim + self.units
+        logger.debug("注意力参数Wa的隐层维度：%d",attention_dim)
 
         self.kernel = self.add_weight(shape=(input_dim, self.units * 3),
                                       name='kernel',
@@ -211,7 +212,11 @@ class AttentionGRUCell(Layer):
         h_tm1 = states[0]  # previous memory
 
         # ######## 修改 ##########
+        h_tm1 = _p(h_tm1,"解码器中间状态h_tm1")
         c_t,alpha_ij = self.compute_attention(h_tm1,constants) # 计算这一时刻的注意力
+        c_t = _p(c_t,"注意力向量")
+        alpha_ij = _p(alpha_ij, "注意力分布")
+
         inputs = K.concatenate([inputs,c_t],axis=-1) # 原始输入 concat上 注意力 作为总的输入
 
         if 0 < self.dropout < 1 and self._dropout_mask is None:
@@ -286,6 +291,11 @@ class AttentionGRUCell(Layer):
             if training is None:
                 h._uses_learning_phase = True
 
+        logger.debug("AttenCell.alpha_ij.shape:%r",alpha_ij.shape)
+        logger.debug("AttenCell.h.shape:%r", h.shape)
+
+        alpha_ij = _p(alpha_ij,"注意力")
+        h = _p(h, "解码器状态h")
         return K.concatenate([alpha_ij,h],axis=-1),[h]
 
     def get_config(self):
@@ -340,14 +350,6 @@ class AttentionGRU(RNN):
                  reset_after=False,
                  **kwargs):
 
-        if K.backend() == 'theano' and (dropout or recurrent_dropout):
-            logger.warning(
-                'RNN dropout is no longer supported with the Theano backend '
-                'due to technical limitations. '
-                'You can either set `dropout` and `recurrent_dropout` to 0, '
-                'or use the TensorFlow backend.')
-            dropout = 0.
-            recurrent_dropout = 0.
 
         cell = AttentionGRUCell(units,
                        activation=activation,

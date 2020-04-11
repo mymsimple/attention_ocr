@@ -73,5 +73,5 @@ nohup python -m main.train \
     --validation_steps=10 \
     --workers=10 \
     --preprocess_num=100 \
-    --early_stop=10 \
+    --early_stop=50 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &

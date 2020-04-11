@@ -1,5 +1,5 @@
 from keras.layers import Conv2D
-from keras.layers import LeakyReLU
+from keras.layers import ReLU
 from keras.layers import MaxPooling2D
 from keras.layers import BatchNormalization
 from keras.layers import Lambda
@@ -64,43 +64,43 @@ class Conv():
     def build(self, inputs):
         # Block 1
         x = Conv2D(64, (3, 3), padding='same', name='block1_conv1')(inputs)
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         # x = BatchNormalization()(x)
         x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) #1/2
 
         # Block 2
         x = Conv2D(128, (3, 3), padding='same', name='block2_conv1')(x)
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         # x = BatchNormalization()(x
         x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) #1/2
 
         # Block 3
         x = Conv2D(256, (3, 3), padding='same', name='block3_conv1')(x)
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         # x = BatchNormalization()(x
 
         # Block 4
         x = Conv2D(256, (3, 3), padding='same', name='block4_conv1')(x)
         # x = BatchNormalization()(x
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         x = MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')(x) # 1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 5
         x = Conv2D(512, (3, 3), padding='same', name='block5_conv1')(x)
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         x = BatchNormalization()(x)
 
         # Block 6
         x = Conv2D(512, (3, 3), padding='same', name='block6_conv1')(x)
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')(x) #1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 7
         x = Conv2D(512, (2, 2), strides=[2, 1], padding='same', name='block7_conv1')(x) #1/2
-        x = LeakyReLU()(x)
+        x = ReLU()(x)
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
         x = Lambda(self.squeeze_wrapper)(x)
-        # x = K.squeeze(x, axis=1)
+
         return x

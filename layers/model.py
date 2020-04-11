@@ -32,6 +32,7 @@ def words_accuracy(y_true, y_pred):
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def model(conf,args):
 
+    seq_length = conf.INPUT_IMAGE_WIDTH//4
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
     decoder_inputs = Input(shape=(None, conf.CHARSET_SIZE), name='decoder_inputs')
 
@@ -41,7 +42,7 @@ def model(conf,args):
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
-                                   input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
+                                   input_shape=(seq_length,512),
                                    name='bidirectional_encoder')
 
     encoder_outs, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
@@ -67,9 +68,9 @@ def model(conf,args):
 
     logger.debug("AttentionGRU输出的张量[attn_decoder_outputs]:[%r]", attn_decoder_outputs)
 
-    attns = Lambda(lambda x: x[:,:,:64], name="Lambda_attn")(attn_decoder_outputs)
+    attns = Lambda(lambda x: x[:,:,:seq_length], name="Lambda_attn")(attn_decoder_outputs)
 
-    decoder_outputs = Lambda(lambda x: x[:,:,64:], name="Lambda_decoder")(attn_decoder_outputs)
+    decoder_outputs = Lambda(lambda x: x[:,:,seq_length:], name="Lambda_decoder")(attn_decoder_outputs)
 
     logger.debug("AttentionGRU输出的张量[atten,attn_out]:[%r,%r]",attns,decoder_outputs)
 
