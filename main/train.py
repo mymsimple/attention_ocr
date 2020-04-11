@@ -84,7 +84,7 @@ def train(args):
 
     model.fit_generator(
         generator=train_sequence,
-        steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
+        # steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
         epochs=args.epochs,
         workers=args.workers,   # 同时启动多少个进程加载
         callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop,attention_visible],

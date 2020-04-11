@@ -29,8 +29,10 @@ class TBoardVisual(Callback):
         self.charset = charset
         self.font = ImageFont.truetype("data/font/simsun.ttc", 10)  # 设置字体
 
+    def on_batch_end(self, batch, logs=None):
 
-    def on_epoch_end(self, epoch, logs):
+        if batch%1000!=0:return
+
         # 随机取3张
         # logger.debug("self.validation_data:%r",self.validation_data)
 
@@ -73,7 +75,7 @@ class TBoardVisual(Callback):
             # logger.debug("image.shape:%r,e_output.shape:%r",image.shape,e_output.shape)
             tf_img = self.make_image(image, e_outputs_data,label,pred)
             summary = tf.Summary(value=[tf.Summary.Value(tag="{}/{}".format(self.tag,i),image=tf_img)])
-            writer.add_summary(summary, epoch)
+            writer.add_summary(summary)
 
         writer.close()
 
