@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from tensorflow.keras.models import load_model
 
 # from keras.models import load_model
-from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+# from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 
 from main import conf
 import logging
