@@ -3,13 +3,15 @@ from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Activation
 from tensorflow.keras.backend import squeeze
 import tensorflow.keras.backend as K
 import logging
 # from keras.layers import Conv2D
-# from keras.layers import LeakyReLU
+from keras.layers import LeakyReLU
+from keras.layers import Activation
 # from keras.layers import MaxPooling2D
-# from keras.layers import BatchNormalization
+from keras.layers import BatchNormalization
 # from keras.layers import Lambda
 # from keras.backend import squeeze
 
@@ -71,43 +73,43 @@ class Conv():
     def build(self, inputs):
         # Block 1
         x = Conv2D(64, (3, 3), padding='same', name='block1_conv1')(inputs)
-        x = LeakyReLU()(x)
+        x = LeakyReLU(name="block1_relu")(x)
         # x = BatchNormalization()(x)
         x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) #1/2
 
         # Block 2
         x = Conv2D(128, (3, 3), padding='same', name='block2_conv1')(x)
-        x = LeakyReLU()(x)
+        x = LeakyReLU(name="block2_relu")(x)
         # x = BatchNormalization()(x
         x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) #1/2
 
         # Block 3
         x = Conv2D(256, (3, 3), padding='same', name='block3_conv1')(x)
-        x = LeakyReLU()(x)
+        x = LeakyReLU(name="block3_relu")(x)
         # x = BatchNormalization()(x
 
         # Block 4
         x = Conv2D(256, (3, 3), padding='same', name='block4_conv1')(x)
         # x = BatchNormalization()(x
-        x = LeakyReLU()(x)
+        x = LeakyReLU(name="block4_relu")(x)
         x = MaxPooling2D((2, 1), strides=(2, 1), name='block4_pool')(x) # 1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 5
         x = Conv2D(512, (3, 3), padding='same', name='block5_conv1')(x)
-        x = LeakyReLU()(x)
-        x = BatchNormalization()(x)
+        x = LeakyReLU(name="block5_relu")(x)
+        x = BatchNormalization(name="block5_batch_normal")(x)
 
         # Block 6
         x = Conv2D(512, (3, 3), padding='same', name='block6_conv1')(x)
-        x = LeakyReLU()(x)
-        x = BatchNormalization()(x)
+        x = LeakyReLU(name="block6_relu")(x)
+        x = BatchNormalization(name="block6_batch_normal")(x)
         x = MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')(x) #1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 7
         x = Conv2D(512, (2, 2), strides=[2, 1], padding='same', name='block7_conv1')(x) #1/2
-        x = LeakyReLU()(x)
+        x = LeakyReLU(name="block7_relu")(x)
 
         # 输出是(batch,1,Width/4,512),squeeze后，变成了(batch,Width/4,512)
-        x = Lambda(self.squeeze_wrapper)(x)
+        x = Lambda(self.squeeze_wrapper,name="sequeeze_lambda")(x)
 
         return x

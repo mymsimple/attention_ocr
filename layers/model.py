@@ -52,6 +52,8 @@ def words_accuracy(y_true, y_pred):
 
     max_idx_p = tf.argmax(y_pred, axis=2)
     max_idx_l = tf.argmax(y_true, axis=2)
+    max_idx_p = _p(max_idx_p,"@@@,预测值")
+    max_idx_l = _p(max_idx_l, "@@@,标签值")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
     correct_pred = _p(correct_pred, "@@@,words_accuracy(字对字)")
     _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
@@ -63,19 +65,11 @@ def words_accuracy(y_true, y_pred):
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def model(conf,args):
 
-    # 高度和长度都不定，是None，虽然可以定义高度(32,None,3)，但是一般都是从左到右定义None的，所以第一个写32也就没有意义了
-    # fix the width & width,give up the mask idea....
+
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
 
-    # input_image = Masking(0.0)(input_image) <----- 哭：卷基层不支持Mask，欲哭无泪：TypeError: Layer block1_conv1 does not support masking, but was passed an input_mask: Tensor("masking/Any_1:0", shape=(?, 32, ?), dtype=bool)
-    # 1. 卷基层，输出是conv output is (Batch,Width/32,512)
     conv = Conv().build(input_image)
 
-    # 经过padding后，转变为=>(Batch,50,512)
-    # conv_output_with_padding = Lambda(padding_wrapper,arguments={'mask_value':conf.MASK_VALUE})(conv_output)
-    # conv_output_mask = Masking(conf.MASK_VALUE)(conv_output)
-
-    # 2.Encoder Bi-GRU编码器
     encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
                                        return_sequences=True,
                                        return_state=True,
@@ -84,7 +78,6 @@ def model(conf,args):
                                    name='bidirectional_encoder')
 
     # conv = _p(conv,"卷积层输出")
-
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
 
     logger.debug("双向输出encoder_out：\t%r",encoder_out.shape)
@@ -93,8 +86,6 @@ def model(conf,args):
 
     # 3.Decoder GRU解码器，使用encoder的输出当做输入状态；None是序列长度，不定长
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-
-    # masked_decoder_inputs = Masking(conf.MASK_VALUE)(decoder_inputs)
 
     # GRU的units=GRU_HIDDEN_SIZE*2=512，是解码器GRU输出的维度，至于3770是之后，在做一个全连接才可以得到的
     # units指的是多少个隐含神经元，这个数量要和前面接的Bi-LSTM一致(他是512),这样，才可以接受前面的Bi-LSTM的输出作为他的初始状态输入
@@ -139,38 +130,38 @@ def model(conf,args):
     # ##################################################################################################
 
     ### encoder model ###
+    #
+    # infer_input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
+    # infer_conv_output = Conv().build(infer_input_image) # 看！复用了 decoder_gru
+    # infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state = \
+    #     encoder_bi_gru(infer_conv_output)
+    # infer_encoder_model = Model(inputs=infer_input_image,
+    #                             outputs=[infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state])
+    # infer_encoder_model.summary()
+    #
+    # ### decoder model ###
+    # # 训练的时候，解码器的输出是一口气全部得到，因为这个时候输入是确定的（就是标签），
+    # # 解码的时候，解码内容是一个一个单独出来的，无法一口气得到，特别是要做beamSearch的话，还要做动态规划
+    # # 这个时候，如果还套用之前的attention，这个时候的decoder的状态就是长度就是1
+    #
+    # # 解码器的输入，是一个one-hot字符
+    # infer_decoder_inputs =     Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
+    # # 编码器的所有状态
+    # infer_encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
+    # # 解码器的隐状态输入
+    # infer_decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
+    #
+    # infer_decoder_out, infer_decoder_state = \
+    #     decoder_gru(infer_decoder_inputs, initial_state=infer_decoder_init_state)  # 看！复用了 decoder_gru
+    #
+    # infer_attn_out, infer_attn_states = \
+    #     attn_layer([infer_encoder_out_states, infer_decoder_out]) # 看！复用了attn_layer
+    #
+    # infer_decoder_concat = Concatenate(axis=-1, name='concat')([infer_decoder_out, infer_attn_out])
+    # infer_decoder_pred = TimeDistributed(dense)(infer_decoder_concat) # 看！复用了dense
+    # infer_decoder_model = Model(inputs=[infer_decoder_inputs, infer_encoder_out_states,infer_decoder_init_state],
+    #                             outputs=[infer_decoder_pred,infer_attn_states,infer_decoder_state])
+    # infer_decoder_model.summary()
 
-    infer_input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
-    infer_conv_output = Conv().build(infer_input_image) # 看！复用了 decoder_gru
-    infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state = \
-        encoder_bi_gru(infer_conv_output)
-    infer_encoder_model = Model(inputs=infer_input_image,
-                                outputs=[infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state])
-    infer_encoder_model.summary()
 
-    ### decoder model ###
-    # 训练的时候，解码器的输出是一口气全部得到，因为这个时候输入是确定的（就是标签），
-    # 解码的时候，解码内容是一个一个单独出来的，无法一口气得到，特别是要做beamSearch的话，还要做动态规划
-    # 这个时候，如果还套用之前的attention，这个时候的decoder的状态就是长度就是1
-
-    # 解码器的输入，是一个one-hot字符
-    infer_decoder_inputs =     Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-    # 编码器的所有状态
-    infer_encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
-    # 解码器的隐状态输入
-    infer_decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
-
-    infer_decoder_out, infer_decoder_state = \
-        decoder_gru(infer_decoder_inputs, initial_state=infer_decoder_init_state)  # 看！复用了 decoder_gru
-
-    infer_attn_out, infer_attn_states = \
-        attn_layer([infer_encoder_out_states, infer_decoder_out]) # 看！复用了attn_layer
-
-    infer_decoder_concat = Concatenate(axis=-1, name='concat')([infer_decoder_out, infer_attn_out])
-    infer_decoder_pred = TimeDistributed(dense)(infer_decoder_concat) # 看！复用了dense
-    infer_decoder_model = Model(inputs=[infer_decoder_inputs, infer_encoder_out_states,infer_decoder_init_state],
-                                outputs=[infer_decoder_pred,infer_attn_states,infer_decoder_state])
-    infer_decoder_model.summary()
-
-
-    return train_model,infer_decoder_model,infer_encoder_model
+    return train_model,None,None#infer_decoder_model,infer_encoder_model

@@ -66,7 +66,6 @@ class TBoardVisual(Callback):
 
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
-            e_output = e_outputs_data[0][i]
 
             logger.debug("label字符串:%r",label)
             logger.debug("pred字符串 :%r",pred)
@@ -81,10 +80,10 @@ class TBoardVisual(Callback):
 
         return
 
-
+    # 画一张图
     def make_image(self,raw_image,e_output,label,pred):
 
-        logger.debug("注意力分布：%r", e_output)
+        # logger.debug("注意力分布：%r", e_output)
         logger.debug("注意力分布shape：%r",e_output.shape)
 
         for words_distribute in e_output:
