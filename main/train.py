@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from tensorflow.keras.models import load_model
 
 # from keras.models import load_model
-# from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 
 from main import conf
 import logging
@@ -56,38 +56,24 @@ def train(args):
             model = load_model(_checkpoint_path,
                 custom_objects={
                     'words_accuracy': _model.words_accuracy,
-                    'Conv':Conv,
                     'AttentionLayer':AttentionLayer})
             logger.info("加载checkpoint模型[%s]", _checkpoint_path)
         else:
             logger.warning("找不到任何checkpoint，重新开始训练")
 
-    checkpoint = ModelCheckpoint(
-        filepath=checkpoint_path,
-        monitor='words_accuracy',
-        verbose=1,
-        save_best_only=True,
-        mode='max')
-
-    early_stop = EarlyStopping(
-        monitor='words_accuracy',
-        patience=args.early_stop,
-        verbose=1,
-        mode='max')
-
     logger.info("Begin train开始训练：")
 
-    # 训练STEPS_PER_EPOCH个batch，作为一个epoch，默认是10000
-
-
-    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset)
+    attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset,args)
+    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=args.debug_step,write_graph=True,write_grads=True,update_freq=args.debug_step)
+    early_stop = EarlyStopping(monitor='words_accuracy', patience=args.early_stop, verbose=1, mode='max')
+    checkpoint = ModelCheckpoint(filepath=checkpoint_path, monitor='words_accuracy', verbose=1, save_best_only=True,mode='max')
 
     model.fit_generator(
         generator=train_sequence,
         # steps_per_epoch=args.steps_per_epoch,#其实应该是用len(train_sequence)，但是这样太慢了，所以，我规定用一个比较小的数，比如1000
         epochs=args.epochs,
         workers=args.workers,   # 同时启动多少个进程加载
-        callbacks=[TensorBoard(log_dir=tb_log_name),checkpoint,early_stop,attention_visible],
+        callbacks=[tboard,checkpoint,early_stop,attention_visible],
         use_multiprocessing=True,
         validation_data=valid_sequence,
         validation_steps=args.validation_steps)

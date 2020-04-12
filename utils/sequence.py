@@ -15,6 +15,11 @@ import time
 logger = logging.getLogger("SequenceData")
 
 
+import matplotlib
+def show_image(img):
+    matplotlib.pyplot.imshow(img)
+
+
 # 自定义的数据加载器
 # 几个细节：
 # - 不用用多进程方式加载，不知道为何总是卡住，改成multiprocess=False,即使用多线程就好了,参考：https://stackoverflow.com/questions/54620551/confusion-about-multiprocessing-and-workers-in-keras-fit-generator-with-window

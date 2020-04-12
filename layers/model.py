@@ -65,7 +65,6 @@ def words_accuracy(y_true, y_pred):
 # 焊接vgg和lstm，入参是vgg_conv5返回的张量
 def model(conf,args):
 
-
     input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
 
     conv = Conv().build(input_image)
@@ -74,7 +73,7 @@ def model(conf,args):
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
-                                   input_shape=(conf.INPUT_IMAGE_WIDTH/4,512),
+                                   input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
                                    name='bidirectional_encoder')
 
     # conv = _p(conv,"卷积层输出")

@@ -35,7 +35,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     python -m main.train \
     --name=attention_ocr \
     --epochs=2 \
-    --steps_per_epoch=1 \
+    --debug_step=2 \
     --batch=2 \
     --retrain=True \
     --learning_rate=0.001 \
@@ -65,7 +65,7 @@ echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 nohup python -m main.train \
     --name=attention_ocr \
     --epochs=5000000 \
-    --steps_per_epoch=1000 \
+    --debug_step=1000 \
     --batch=32 \
     --retrain=True \
     --learning_rate=0.001 \

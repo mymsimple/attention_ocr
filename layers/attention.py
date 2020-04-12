@@ -32,8 +32,6 @@ class AttentionLayer(Layer):
         assert isinstance(input_shape, list)
         # Create a trainable weight variable for this layer.
         logger.debug("Attention build时候，input_shape为:%r",input_shape)
-        # input_shape:[TensorShape([Dimension(None), Dimension(50),   Dimension(512)]),
-        #              TensorShape([Dimension(None), Dimension(None), Dimension(512)])]
 
         self.W_a = self.add_weight(name='W_a',
                                    shape=tf.TensorShape((input_shape[0][2], input_shape[0][2])),

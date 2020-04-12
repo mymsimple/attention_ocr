@@ -3,15 +3,13 @@ from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Lambda
-from tensorflow.keras.layers import Activation
 from tensorflow.keras.backend import squeeze
-import tensorflow.keras.backend as K
 import logging
 # from keras.layers import Conv2D
-from keras.layers import LeakyReLU
-from keras.layers import Activation
+# from keras.layers import LeakyReLU
+# from keras.layers import Activation
 # from keras.layers import MaxPooling2D
-from keras.layers import BatchNormalization
+# from keras.layers import BatchNormalization
 # from keras.layers import Lambda
 # from keras.backend import squeeze
 
@@ -96,13 +94,13 @@ class Conv():
 
         # Block 5
         x = Conv2D(512, (3, 3), padding='same', name='block5_conv1')(x)
-        x = LeakyReLU(name="block5_relu")(x)
         x = BatchNormalization(name="block5_batch_normal")(x)
+        x = LeakyReLU(name="block5_relu")(x)
 
         # Block 6
         x = Conv2D(512, (3, 3), padding='same', name='block6_conv1')(x)
-        x = LeakyReLU(name="block6_relu")(x)
         x = BatchNormalization(name="block6_batch_normal")(x)
+        x = LeakyReLU(name="block6_relu")(x)
         x = MaxPooling2D((2, 1), strides=(2, 1), name='block6_pool')(x) #1/2 <------ pool kernel is (2,1)!!!!!
 
         # Block 7
