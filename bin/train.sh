@@ -34,16 +34,16 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     #      如果你规定，那就得比它小才可以，另外还要验证，是不是把每个批次的结果做平均，还是算整体的
     python -m main.train \
     --name=attention_ocr \
-    --epochs=10 \
+    --epochs=100 \
     --debug_step=50 \
     --steps_per_epoch=100 \
-    --batch=16 \
+    --batch=32 \
     --retrain=True \
     --learning_rate=0.001 \
     --validation_batch=8 \
     --preprocess_num=10000 \
-    --workers=3 \
-    --early_stop=3
+    --workers=10 \
+    --early_stop=50
 
     if [ "$1" == "debug" ]; then
         # 恢复源文件，防止git提交
