@@ -29,6 +29,7 @@ def init_args():
     parser.add_argument("--validate_label_file", default="data/validate.txt", type=str, help="")
     parser.add_argument("--epochs" ,default=1,type=int,help="")
     parser.add_argument("--debug_step", default=1,type=int,help="")
+    parser.add_argument("--steps_per_epoch", default=None,type=int,help="")
     parser.add_argument("--batch" , default=1,type=int,help="")
     parser.add_argument("--learning_rate", default=0.001, type=float, help="")
     parser.add_argument("--workers",default=1,type=int,help="")
@@ -38,6 +39,10 @@ def init_args():
     parser.add_argument("--validation_batch",default=1,type=int, help="")
     parser.add_argument("--early_stop", default=1, type=int, help="")
     args = parser.parse_args()
+    print("==============================")
+    print("所有的使用的配置：")
+    print("==============================")
+    print(args)
     return args
 
 

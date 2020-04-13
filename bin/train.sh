@@ -36,6 +36,7 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     --name=attention_ocr \
     --epochs=2 \
     --debug_step=2 \
+    --steps_per_epoch=3 \
     --batch=2 \
     --retrain=True \
     --learning_rate=0.001 \
