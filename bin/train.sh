@@ -34,15 +34,15 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     #      如果你规定，那就得比它小才可以，另外还要验证，是不是把每个批次的结果做平均，还是算整体的
     python -m main.train \
     --name=attention_ocr \
-    --epochs=2 \
-    --debug_step=2 \
-    --steps_per_epoch=3 \
-    --batch=2 \
+    --epochs=10 \
+    --debug_step=50 \
+    --steps_per_epoch=100 \
+    --batch=16 \
     --retrain=True \
     --learning_rate=0.001 \
-    --validation_batch=2 \
-    --workers=1 \
-    --preprocess_num=1 \
+    --validation_batch=8 \
+    --preprocess_num=10000 \
+    --workers=3 \
     --early_stop=3
 
     if [ "$1" == "debug" ]; then
@@ -73,6 +73,5 @@ nohup python -m main.train \
     --validation_batch=64 \
     --validation_steps=10 \
     --workers=10 \
-    --preprocess_num=100 \
     --early_stop=10 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &

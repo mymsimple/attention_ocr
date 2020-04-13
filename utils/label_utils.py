@@ -62,13 +62,20 @@ def caculate_accuracy(preds,labels):
 # >data/train/22.png 市平谷区金海
 # >data/train/23.png 江中路53
 # bin_num:分箱个数
-def read_data_file(label_file_name, process_num):
+def read_data_file(label_file_name, process_num=None):
     f = open(label_file_name, 'r',encoding="utf-8")
     data = []
+    count=0
     for line in f:
+
+        if process_num and count>process_num:
+            logger.debug("加载完成！仅仅加载[%d]条数据，",process_num)
+            break
+
         filename , _ , label = line[:-1].partition(' ') # partition函数只读取第一次出现的标志，分为左右两个部分,[:-1]去掉回车
         # print(filename,":",label)
         data.append((filename,label))
+        count+=1
     f.close()
     return data
 

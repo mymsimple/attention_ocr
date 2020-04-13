@@ -1,8 +1,7 @@
 # https://stackoverflow.com/questions/54989442/rnn-in-tensorflow-vs-keras-depreciation-of-tf-nn-dynamic-rnn
 import numpy as np
-from tensorflow.keras.layers import Embedding,GRU,Masking,Input
-from tensorflow.keras import Model,backend as K
-import tensorflow as tf
+from tensorflow.python.keras.layers import GRU,Masking,Input
+from tensorflow.python.keras import Model
 
 test_input = np.array([
     [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],

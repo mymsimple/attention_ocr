@@ -1,11 +1,10 @@
 from layers import model as _model
-from layers.conv import Conv
 from layers.attention import AttentionLayer
 from utils.sequence import SequenceData
 from utils import util, logger as log,label_utils
 import os
-from tensorflow.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
-from tensorflow.keras.models import load_model
+from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
+from tensorflow.python.keras.models import load_model
 
 # from keras.models import load_model
 # from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
@@ -28,7 +27,7 @@ def train(args):
     conf.CHARSET_SIZE = len(charset)
 
     model, _, _ = _model.model(conf, args)
-    # K.get_session().run(tf.global_variables_initializer())
+
     train_sequence = SequenceData(name="训练",
                                   label_file=args.train_label_file,
                                   charset_file=conf.CHARSET,
@@ -64,7 +63,7 @@ def train(args):
     logger.info("Begin train开始训练：")
 
     attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset,args)
-    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=args.debug_step,write_graph=True,write_grads=True)
+    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=1,write_graph=True,write_grads=True,write_images=True)
     early_stop = EarlyStopping(monitor='words_accuracy', patience=args.early_stop, verbose=1, mode='max')
     checkpoint = ModelCheckpoint(filepath=checkpoint_path, monitor='words_accuracy', verbose=1, save_best_only=True,mode='max')
 

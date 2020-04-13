@@ -1,10 +1,8 @@
 import tensorflow as tf
 import logging
 from utils import label_utils
-# from keras import backend as K
-from keras.callbacks import Callback
-from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import Callback
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.callbacks import Callback
 import numpy as np
 import cv2
 from PIL import Image, ImageDraw, ImageFont

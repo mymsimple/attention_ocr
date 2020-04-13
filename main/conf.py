@@ -34,7 +34,7 @@ def init_args():
     parser.add_argument("--learning_rate", default=0.001, type=float, help="")
     parser.add_argument("--workers",default=1,type=int,help="")
     parser.add_argument("--retrain", default=False, type=bool, help="")
-    parser.add_argument("--preprocess_num",default=1,type=int,help="")
+    parser.add_argument("--preprocess_num",default=None,type=int,help="")
     parser.add_argument("--validation_steps",default=1,type=int, help="")
     parser.add_argument("--validation_batch",default=1,type=int, help="")
     parser.add_argument("--early_stop", default=1, type=int, help="")

@@ -2,9 +2,9 @@ from utils import image_utils, label_utils
 import logging,math
 import numpy as np
 
-from tensorflow.keras.utils import Sequence
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.utils import to_categorical
+from tensorflow.python.keras.utils import Sequence
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+from tensorflow.python.keras.utils import to_categorical
 
 # from keras.utils import Sequence
 # from keras.preprocessing.sequence import pad_sequences
@@ -77,7 +77,6 @@ class SequenceData(Sequence):
         #             os.getpid(),
         #             idx,
         #             time.time()-start_time)
-
         # 识别结果是STX,A,B,C,D,ETX，seq2seq的decoder输入和输出要错开1个字符
         # labels[:,:-1,:]  STX,A,B,C,D  decoder输入标签
         # labels[:,1: ,:]  A,B,C,D,ETX  decoder验证标签
@@ -101,24 +100,4 @@ class SequenceData(Sequence):
         logger.info("[%s]开始加载样本和标注",self.name)
         start_time = time.time()
         self.data_list = label_utils.read_data_file(self.label_file,args.preprocess_num)
-
         logger.info("[%s]加载了样本:[%d]个,耗时[%d]秒", self.name, len(self.data_list),(time.time() - start_time))
-        # logger.debug("initialize:datalist:%r",self.data_list)
-        # logger.debug("使用[%d]个进程，开始并发处理所有的[%d]行标签数据", args.preprocess_num,len(data_list))
-        # # 使用一个进程池来分别预处理所有的数据（加入STX/ETX，以及过滤非字表字
-        # pool_size = args.preprocess_num # 把进程池数和要分箱的数量搞成一致
-        # from functools import partial
-        # func = partial(label_utils.process_lines, self.charsets) #  函数的功能就是：把一个函数的某些参数给固定住，返回一个新的函数：http://funhacks.net/explore-python/Functional/partial.html
-        # pool = multiprocessing.Pool(processes=pool_size,maxtasksperchild=2,)
-        # pool_outputs = pool.map(func, data_list) # 使用partial工具类，来自动划分这些数据到每个进程中
-        # pool.close()  # no more tasks
-        # pool.join()  # wrap up current tasks
-        #
-        # self.images_labels = [item for sublist in pool_outputs for item in sublist]
-        #
-        # logger.info("加载了[%s]样本:[%d]个,耗时[%d]秒", self.name, len(self.images_labels),(time.time() - start_time))
-        #
-        # np.random.shuffle(self.images_labels)
-        #
-        # logger.info("Shuffle[%s]样本数据", self.name)
-

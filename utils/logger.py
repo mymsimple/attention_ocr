@@ -6,7 +6,6 @@ import datetime
 import tensorflow as tf
 debug=True
 
-from tensorflow.keras import backend as K
 
 def _p(tensor,msg):
     if (debug):
