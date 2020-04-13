@@ -45,7 +45,7 @@ class SequenceData(Sequence):
 
 
     def load_image_label(self,batch_data_list):
-        logger.debug("[%s]加载标签:%r",self.name, batch_data_list)
+        # logger.debug("[%s]加载标签:%r",self.name, batch_data_list)
         images_labelids = label_utils.process_lines(self.charsets,batch_data_list)
 
         # print(self.name,"Sequence PID:", os.getpid(),",idx=",idx)

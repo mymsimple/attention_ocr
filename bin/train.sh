@@ -65,6 +65,7 @@ echo "使用 #$CUDA_VISIBLE_DEVICES GPU"
 
 nohup python -m main.train \
     --name=attention_ocr \
+    --steps_per_epoch=1000 \
     --epochs=5000000 \
     --debug_step=1000 \
     --batch=32 \
@@ -73,5 +74,5 @@ nohup python -m main.train \
     --validation_batch=64 \
     --validation_steps=10 \
     --workers=10 \
-    --early_stop=10 \
+    --early_stop=30 \
     >> ./logs/Attention_GPU$CUDA_VISIBLE_DEVICES_$Date.log 2>&1 &
