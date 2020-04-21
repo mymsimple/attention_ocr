@@ -6,10 +6,6 @@ from tensorflow.python.keras.utils import Sequence
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 from tensorflow.python.keras.utils import to_categorical
 
-# from keras.utils import Sequence
-# from keras.preprocessing.sequence import pad_sequences
-# from keras.utils import to_categorical
-
 import time
 
 logger = logging.getLogger("SequenceData")

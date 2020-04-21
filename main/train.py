@@ -5,10 +5,6 @@ from utils import util, logger as log,label_utils
 import os
 from tensorflow.python.keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
 from tensorflow.python.keras.models import load_model
-
-# from keras.models import load_model
-# from keras.callbacks import TensorBoard,EarlyStopping,ModelCheckpoint
-
 from main import conf
 import logging
 from utils.visualise_attention import  TBoardVisual

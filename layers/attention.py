@@ -2,11 +2,6 @@ import tensorflow as tf
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.backend import tile
-
-# from keras.backend import tile
-# from keras.layers import Layer
-# from keras import backend as K
-
 from utils.logger import _p_shape,_p
 import logging
 

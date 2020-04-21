@@ -1,38 +1,12 @@
-# 之前报错：AttributeError: 'Bidirectional' object has no attribute 'outbound_nodes'
-# from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed,Reshape
-# from tensorflow.python.keras.applications.vgg19 import VGG19
-# from keras.applications.vgg19 import VGG19
-# 原因是不能用keras自带的vgg19+keras自带的bidirectional，靠，肯定是版本不兼容的问题
-# 切换到下面的就好了，之前还是试验了用tf的bidirectional+keras的vgg19，也是不行，报错：AttributeError: 'Node' object has no attribute 'output_masks'
-# 靠谱的组合是：tf的bidirectional+tf的vgg19
 from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
 import tensorflow as tf
-
-# from keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
-# from keras.models import Model
-# from keras.optimizers import Adam
-# from keras import backend as K
-
 from layers.conv import Conv
 from layers.attention import AttentionLayer
 import logging
 from utils.logger import _p_shape,_p
 logger = logging.getLogger("Model")
-
-
-
-# 这个函数废弃了，改用tf自带的pad_seqence了
-# # seq需要加padding
-# # 输入的图像需要加 0 padding
-# def padding_wrapper(conv_output,mask_value):
-#     paddings = [[0, 0], [0, 50 - tf.shape(conv_output)[0]],[0,0]]
-#     # 给卷基层的输出增加padding，让他可以输入到bi-gru里面去
-#     conv_output_with_padding = tf.pad(conv_output, paddings=paddings, constant_values=mask_value)
-#     #print("conv_output_with_padding.shape")
-#     conv_output_with_padding.set_shape([None, 50, 512])  # 靠！还可以这么玩呢！给丫设置一个shape。
-#     return conv_output_with_padding
 
 
 # y_pred is [batch,seq,charset_size]
@@ -62,58 +36,42 @@ def words_accuracy(y_true, y_pred):
     result = _p(result, "@@@,words_accuracy正确率")
     return result
 
-# 焊接vgg和lstm，入参是vgg_conv5返回的张量
+
 def model(conf,args):
 
-    input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
+    conv,input_image = Conv().build()
 
-    conv = Conv().build(input_image)
-
-    encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
+    encoder_bi_gru1 = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
-                                   input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
-                                   name='bidirectional_encoder')
+                                       input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
+                                       name='bidirectional_encoder')
 
-    # conv = _p(conv,"卷积层输出")
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
+    # TODO：想不通如何实现2个bi-GRU堆叠，作罢，先继续，未来再回过头来考虑
+    # encoder_bi_gru2 = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
+    #                                    return_sequences=True,
+    #                                    return_state=True,
+    #                                    name='encoder_gru'),
+    #                                input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
+    #                                name='bidirectional_encoder')
 
-    logger.debug("双向输出encoder_out：\t%r",encoder_out.shape)
-    logger.debug("双向输出encoder_fwd_state：\t%r", encoder_fwd_state.shape)
-    logger.debug("双向输出encoder_back_state：\t%r", encoder_back_state.shape)
+    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru1(conv)
 
-    # 3.Decoder GRU解码器，使用encoder的输出当做输入状态；None是序列长度，不定长
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-
-    # GRU的units=GRU_HIDDEN_SIZE*2=512，是解码器GRU输出的维度，至于3770是之后，在做一个全连接才可以得到的
-    # units指的是多少个隐含神经元，这个数量要和前面接的Bi-LSTM一致(他是512),这样，才可以接受前面的Bi-LSTM的输出作为他的初始状态输入
     decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
-    decoder_out, decoder_state = decoder_gru(decoder_inputs,
-                                    initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
+    decoder_out, decoder_state = decoder_gru(decoder_inputs,initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
 
-    # 4.Attention layer注意力层
     attn_layer = AttentionLayer(name='attention_layer')
-
-    # attention层的输入是编码器的输出，和，解码器的输出，他俩的输出是一致的，都是512
-    # encoder_out shape=(?, 50, 512) 50是图像宽度/4 ,
-    # decoder_out shape=(?, 30, 512) 30是要识别的字符串长度
     logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)
     attn_out, attn_states = attn_layer([encoder_out, decoder_out]) # c_outputs, e_outputs
 
-    # concat Attention的输出 + GRU的输出
-    # decoder_out[B,Seq,512], attn_out[B,Seq,512]  ---concat---> [B,Seq,1024]
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
-
-    # 5.Dense layer output layer 输出层
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
-
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
     decoder_prob = dense_time(decoder_concat_input)
 
-    # whole model 整个模型
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_prob)
-    # train_model = Model(inputs=[input_image, decoder_inputs],outputs=[decoder_prob,attn_states])
     opt = Adam(lr=args.learning_rate)
 
     # categorical_crossentropy主要是对多分类的一个损失，但是seq2seq不仅仅是一个结果，而是seq_length个多分类问题，是否还可以用categorical_crossentropy？

@@ -1,6 +1,6 @@
-import tensorflow as tf
 import logging
 from utils import label_utils
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import Callback
 import numpy as np
