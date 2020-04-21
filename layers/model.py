@@ -45,7 +45,6 @@ def model(conf,args):
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
-                                       input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
                                        name='bidirectional_encoder')
 
     # TODO：想不通如何实现2个bi-GRU堆叠，作罢，先继续，未来再回过头来考虑
@@ -60,7 +59,8 @@ def model(conf,args):
 
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
     decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
-    decoder_out, decoder_state = decoder_gru(decoder_inputs,initial_state=Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state]))
+    decoder_initial_status = Concatenate(axis=-1)([encoder_fwd_state, encoder_back_state])
+    decoder_out, decoder_state = decoder_gru(decoder_inputs,initial_state=decoder_initial_status)
 
     attn_layer = AttentionLayer(name='attention_layer')
     logger.debug("模型Attention调用的张量[encoder_out, decoder_out]:%r,%r",encoder_out, decoder_out)

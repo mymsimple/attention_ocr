@@ -22,9 +22,10 @@ class Conv():
     def build(self):
         resnet50_model = ResNet50(include_top=False,weights='imagenet',input_shape=(32,256,3))
         x = resnet50_model.output
-        x = Dropout(0.75)(x)
         conv_outputs = Lambda(self.squeeze_wrapper)(x)
 
         inputs = resnet50_model.inputs
 
-        return conv_outputs,inputs[0]#inputs=[(-1,32,256,3)]
+        # inputs=[(-1,32,256,3)]
+        # conv_outputs=[-1,8,2048]
+        return conv_outputs,inputs[0]
