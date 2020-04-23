@@ -35,9 +35,9 @@ if [ "$1" == "console" ] || [ "$1" == "debug" ]; then
     python -m main.train \
     --name=attention_ocr \
     --epochs=5 \
-    --debug_step=3 \
+    --debug_step=1 \
     --steps_per_epoch=3 \
-    --batch=3 \
+    --batch=4 \
     --retrain=True \
     --learning_rate=0.001 \
     --validation_batch=3 \

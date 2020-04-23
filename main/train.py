@@ -59,7 +59,7 @@ def train(args):
     logger.info("Begin train开始训练：")
 
     attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset,args)
-    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=1,batch_size=2,write_grads=True)
+    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=1,batch_size=2)#,write_grads=True),写梯度会非常慢
     early_stop = EarlyStopping(monitor='words_accuracy', patience=args.early_stop, verbose=1, mode='max')
     checkpoint = ModelCheckpoint(filepath=checkpoint_path, monitor='words_accuracy', verbose=1, mode='max')
 
