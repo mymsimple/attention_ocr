@@ -5,7 +5,7 @@ import tensorflow as tf
 from layers.conv import Conv
 from layers.attention import AttentionLayer
 import logging
-from utils.logger import _p_shape,_p
+from utils.logger import _p
 logger = logging.getLogger("Model")
 
 
@@ -19,7 +19,7 @@ def words_accuracy(y_true, y_pred):
     # 调试结果是======>(None, None, 3864)
     # 第一个维度是batch，第三个维度是词表长度，那第二个维度呢？
     #
-    # y_pred = _p_shape(y_pred,"DEBUG@@@,运行态的时候的words_accuracy的入参y_pred的shape")
+    # y_pred = _p(y_pred,"DEBUG@@@,运行态的时候的words_accuracy的入参y_pred的shape")
     # 运行态的时候的words_accuracy的入参y_pred的shape[2 29 3864]
     # 所以y_pred[batch,seq_len,vocabulary_size]
     # 经调试，没问题
@@ -56,6 +56,8 @@ def model(conf,args):
     #                                name='bidirectional_encoder')
 
     encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru1(conv)
+    encoder_fwd_state = _p(encoder_fwd_state, "编码器输出Fwd状态%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+    encoder_back_state = _p(encoder_back_state, "编码器输出Back状态%%%%%%%%%%%%%%%%%%%%%%%%%%%")
 
     decoder_inputs = Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
     decoder_gru = GRU(units=conf.GRU_HIDDEN_SIZE*2, return_sequences=True, return_state=True, name='decoder_gru')
@@ -69,6 +71,8 @@ def model(conf,args):
     decoder_concat_input = Concatenate(axis=-1, name='concat_layer')([decoder_out, attn_out])
     dense = Dense(conf.CHARSET_SIZE, activation='softmax', name='softmax_layer')
     dense_time = TimeDistributed(dense, name='time_distributed_layer')
+
+    # decoder_concat_input = _p(decoder_concat_input, "编码器输出所有的状态s%%%%%%%%%%%%%%%%%%%%%%%%%%%")
     decoder_prob = dense_time(decoder_concat_input)
 
     train_model = Model(inputs=[input_image, decoder_inputs], outputs=decoder_prob)

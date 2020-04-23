@@ -4,26 +4,23 @@ import os
 from logging import handlers
 import datetime
 import tensorflow as tf
-debug=True
+
+Tensor_DEBUG="None" # tensor | shape | None
 
 
 def _p(tensor,msg):
-    if (debug):
-        dt = datetime.datetime.now().strftime('TF_DEBUG: %m-%d %H:%M:%S: ')
+    if Tensor_DEBUG=="tensor":
+        dt = datetime.datetime.now().strftime('[ TF_DEBUG ] : %m-%d %H:%M:%S: ')
         msg = dt +  msg
-        # return K.print_tensor(tensor, msg)
-        return tf.Print(tensor, [tensor], msg, summarize=100)
-    else:
-        return tensor
+        tensor = tf.Print(tensor, [tf.shape(tensor)], msg, summarize=100)
+        return tf.Print(tensor, [tensor], "", summarize=100)
 
+    if Tensor_DEBUG=="shape":
+        dt = datetime.datetime.now().strftime('[ TF_DEBUG ] : %m-%d %H:%M:%S: ')
+        msg = dt + msg
+        return tf.Print(tensor, [tf.shape(tensor)], msg, summarize=100)
 
-def _p_shape(tensor,msg):
-    if (debug):
-        dt = datetime.datetime.now().strftime('TF_DEBUG: %m-%d %H:%M:%S: ')
-        msg = dt +  msg
-        return tf.Print(tensor, [tf.shape(tensor)], msg,summarize= 100)
-    else:
-        return tensor
+    return tensor
 
 
 def init(level=logging.DEBUG,when="D",backup=7,_format="%(levelname)s: %(asctime)s: %(filename)s:%(lineno)d行 %(message)s"):

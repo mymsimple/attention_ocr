@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 # 1、raw_image是resize之后的
 # 2、image_width/4，也就是256/4，是64
 # 3、seq最长是30，但是也可能是提前结束ETX了
-
-
-
 class TBoardVisual(Callback):
 
     def __init__(self, tag,tboard_dir,charset,args):
@@ -30,6 +27,7 @@ class TBoardVisual(Callback):
 
     def on_batch_end(self, batch, logs=None):
 
+        if batch==0: return
         if batch%self.args.debug_step!=0:return
 
         # 随机取3张
@@ -61,13 +59,11 @@ class TBoardVisual(Callback):
             image = images[i]
             label = labels[i]
 
-
             label = label_utils.prob2str(label,self.charset)
             pred  = label_utils.prob2str(output_prob[i],self.charset)
 
             logger.debug("label字符串:%r",label)
             logger.debug("pred字符串 :%r",pred)
-
 
             # logger.debug("image.shape:%r,e_output.shape:%r",image.shape,e_output.shape)
             tf_img = self.make_image(image, e_outputs_data[i],label,pred)
@@ -79,7 +75,7 @@ class TBoardVisual(Callback):
         return
 
     # 画一张图
-    def make_image(self,raw_image,e_output,label,pred):
+    def make_image(self,raw_image,e_output,label,pred,debug=False):
 
         # 对每个时间片 1/seq
         for i,words_distribute in enumerate(e_output):
@@ -87,24 +83,25 @@ class TBoardVisual(Callback):
             # 如果预测结果是空格/stx/etx，也就是无效字符，就不画注意力焦点了
             if i>len(pred) or \
                 pred[i] == conf.CHAR_STX or \
-                pred[i]==conf.CHAR_ETX or \
+                pred[i] == conf.CHAR_ETX or \
                 pred[i] == conf.CHAR_NULL: continue
 
-            # 对每个字符的分布
+            # 对1个字符,对应的解码器端的分布
             for w_distribute in words_distribute:
                 # 找到64个encoder序列中，哪个位置概率最大
                 max_index = np.argmax(w_distribute)
-                x = max_index*4 # 4直接硬编码了，图像宽度缩小4倍
-                y = 16 # 16也是直接硬编码了
-                # logger.debug("注意力位置(%d,%d)",x,y)
+                x = max_index*conf.FEATURE_MAP_REDUCE
+                y = conf.INPUT_IMAGE_HEIGHT//2
+                logger.debug("注意力位置(%d,%d)",x,y)
                 cv2.circle(raw_image,(x,y),1, (0, 0, 255),1)
 
         # 把样本和识别写到图上
         height, width, channel = raw_image.shape
         image = Image.fromarray(cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB))
         draw = ImageDraw.Draw(image)
+        # 把字画上去
         draw.text((2,2)  , label,'red', self.font)
-        draw.text((128,2), pred, 'red', self.font)
+        draw.text((conf.INPUT_IMAGE_WIDTH//2,2), pred, 'red', self.font)
 
         output = io.BytesIO()
         image.save(output, format='PNG')

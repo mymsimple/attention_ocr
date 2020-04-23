@@ -13,7 +13,8 @@ MASK_VALUE = 0
 CHARSET = "data/charset.txt" # 3770的一级字库
 INPUT_IMAGE_HEIGHT = 32  # 图像归一化的高度
 INPUT_IMAGE_WIDTH = 256  # 最大的图像宽度
-GRU_HIDDEN_SIZE = 256     # GRU隐含层神经元数量
+GRU_HIDDEN_SIZE = 256    # GRU隐含层神经元数量
+FEATURE_MAP_REDUCE = 8   # 相比原始图片，feature map缩小几倍（送入bi-gru的解码器之前的feature map），目前是8，因为用的resnet50，缩小8倍
 
 DIR_LOGS="logs"
 DIR_TBOARD="logs/tboard"
@@ -28,13 +29,13 @@ def init_args():
     parser.add_argument("--train_label_file",    default="data/train.txt",    type=str, help="")
     parser.add_argument("--validate_label_file", default="data/validate.txt", type=str, help="")
     parser.add_argument("--epochs" ,default=1,type=int,help="")
-    parser.add_argument("--debug_step", default=1,type=int,help="")
+    parser.add_argument("--debug_step", default=1,type=int,help="") # 多少步骤打印注意力
     parser.add_argument("--steps_per_epoch", default=None,type=int,help="")
     parser.add_argument("--batch" , default=1,type=int,help="")
     parser.add_argument("--learning_rate", default=0.001, type=float, help="")
     parser.add_argument("--workers",default=1,type=int,help="")
     parser.add_argument("--retrain", default=False, type=bool, help="")
-    parser.add_argument("--preprocess_num",default=None,type=int,help="")
+    parser.add_argument("--preprocess_num",default=None,type=int,help="") # 整个数据的个数，用于调试，None就是所有样本
     parser.add_argument("--validation_steps",default=1,type=int, help="")
     parser.add_argument("--validation_batch",default=1,type=int, help="")
     parser.add_argument("--early_stop", default=1, type=int, help="")

@@ -39,7 +39,7 @@ def train(args):
 
     timestamp = util.timestamp_s()
     tb_log_name = os.path.join(conf.DIR_TBOARD,timestamp)
-    checkpoint_path = conf.DIR_CHECKPOINT+"/checkpoint-{}.hdf5".format(timestamp)
+    checkpoint_path = conf.DIR_MODEL + "/model-" + timestamp + "-epoch{epoch:03d}-acc{words_accuracy:.4f}-val{val_words_accuracy:.4f}.hdf5"
 
     # 如果checkpoint文件存在，就加载之
     if args.retrain:
@@ -59,9 +59,9 @@ def train(args):
     logger.info("Begin train开始训练：")
 
     attention_visible = TBoardVisual('Attetnon Visibility',tb_log_name,charset,args)
-    tboard = TensorBoard(log_dir=tb_log_name)#,histogram_freq=1,write_graph=True,write_grads=True)
+    tboard = TensorBoard(log_dir=tb_log_name,histogram_freq=1,batch_size=2,write_grads=True)
     early_stop = EarlyStopping(monitor='words_accuracy', patience=args.early_stop, verbose=1, mode='max')
-    checkpoint = ModelCheckpoint(filepath=checkpoint_path, monitor='words_accuracy', verbose=1, save_best_only=True,mode='max')
+    checkpoint = ModelCheckpoint(filepath=checkpoint_path, monitor='words_accuracy', verbose=1, mode='max')
 
     model.fit_generator(
         generator=train_sequence,

@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
+from utils.logger import _p
 
 
 '''
@@ -17,12 +17,15 @@ logger = logging.getLogger(__name__)
 class Conv():
 
     def squeeze_wrapper(self, tensor):
+        tensor = _p(tensor,"Resnet50卷基层输出%%%%%%%%%%%%%%%%%%%%%%%%%%%")
         return squeeze(tensor, axis=1)
 
     def build(self):
         resnet50_model = ResNet50(include_top=False,weights='imagenet',input_shape=(32,256,3))
         x = resnet50_model.output
         conv_outputs = Lambda(self.squeeze_wrapper)(x)
+
+        logger.debug("Resnet50输出的feature map shape：%r",conv_outputs.get_shape().as_list())
 
         inputs = resnet50_model.inputs
 
