@@ -26,7 +26,7 @@ def prob2str(pred,charset):
 def ids2str(results,characters):
     values = []
     for r in results: # 每个句子
-        values.append(id2str(r))
+        values.append(id2str(r,characters))
     return values
 
 # id[1,3,56,4,35...] => xyzqf...
