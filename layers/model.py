@@ -37,11 +37,11 @@ def words_accuracy(y_true, y_pred):
     return result
 
 
-def model(conf,args):
+def train_model(conf,args):
 
     conv,input_image = Conv().build()
 
-    encoder_bi_gru1 = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
+    encoder_bi_gru = Bidirectional(GRU(conf.GRU_HIDDEN_SIZE,
                                        return_sequences=True,
                                        return_state=True,
                                        name='encoder_gru'),
@@ -55,7 +55,7 @@ def model(conf,args):
     #                                input_shape=( int(conf.INPUT_IMAGE_WIDTH/4) ,512),
     #                                name='bidirectional_encoder')
 
-    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru1(conv)
+    encoder_out, encoder_fwd_state, encoder_back_state = encoder_bi_gru(conv)
     encoder_fwd_state = _p(encoder_fwd_state, "编码器输出Fwd状态%%%%%%%%%%%%%%%%%%%%%%%%%%%")
     encoder_back_state = _p(encoder_back_state, "编码器输出Back状态%%%%%%%%%%%%%%%%%%%%%%%%%%%")
 
@@ -85,44 +85,33 @@ def model(conf,args):
 
     train_model.summary()
 
-    # ##################################################################################################
-    # 预测用的模型，单独定义！
-    # 预测的模型和训练模型不一样，分成2个模型，一个是编码器 encoder model，一个解码器 decoder model
-    # ##################################################################################################
+    return train_model
 
-    ### encoder model ###
-    #
-    # infer_input_image = Input(shape=(conf.INPUT_IMAGE_HEIGHT,conf.INPUT_IMAGE_WIDTH,3), name='input_image') #高度固定为32，3通道
-    # infer_conv_output = Conv().build(infer_input_image) # 看！复用了 decoder_gru
-    # infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state = \
-    #     encoder_bi_gru(infer_conv_output)
-    # infer_encoder_model = Model(inputs=infer_input_image,
-    #                             outputs=[infer_encoder_out, infer_encoder_fwd_state, infer_encoder_back_state])
-    # infer_encoder_model.summary()
-    #
-    # ### decoder model ###
-    # # 训练的时候，解码器的输出是一口气全部得到，因为这个时候输入是确定的（就是标签），
-    # # 解码的时候，解码内容是一个一个单独出来的，无法一口气得到，特别是要做beamSearch的话，还要做动态规划
-    # # 这个时候，如果还套用之前的attention，这个时候的decoder的状态就是长度就是1
-    #
-    # # 解码器的输入，是一个one-hot字符
-    # infer_decoder_inputs =     Input(shape=(None,conf.CHARSET_SIZE), name='decoder_inputs')
-    # # 编码器的所有状态
-    # infer_encoder_out_states = Input(shape=(1,2*conf.GRU_HIDDEN_SIZE), name='encoder_out_states')
-    # # 解码器的隐状态输入
-    # infer_decoder_init_state = Input(batch_shape=(1,2*conf.GRU_HIDDEN_SIZE), name='decoder_init_state')
-    #
-    # infer_decoder_out, infer_decoder_state = \
-    #     decoder_gru(infer_decoder_inputs, initial_state=infer_decoder_init_state)  # 看！复用了 decoder_gru
-    #
-    # infer_attn_out, infer_attn_states = \
-    #     attn_layer([infer_encoder_out_states, infer_decoder_out]) # 看！复用了attn_layer
-    #
-    # infer_decoder_concat = Concatenate(axis=-1, name='concat')([infer_decoder_out, infer_attn_out])
-    # infer_decoder_pred = TimeDistributed(dense)(infer_decoder_concat) # 看！复用了dense
-    # infer_decoder_model = Model(inputs=[infer_decoder_inputs, infer_encoder_out_states,infer_decoder_init_state],
-    #                             outputs=[infer_decoder_pred,infer_attn_states,infer_decoder_state])
-    # infer_decoder_model.summary()
+def infer_model(model,conf):
+    # 编码器
+    encoder_inputs = model.input[0]  # encoder input
+    bidirectional_encoder = model.get_layer("bidirectional_encoder")
+    encoder_outputs, state_f_enc, state_b_enc = bidirectional_encoder.output
+    encoder_state = Concatenate(axis=-1, name='encoder_state')([state_f_enc, state_b_enc])
+    encoder_model = Model(encoder_inputs, [encoder_outputs,encoder_state])
 
+    # 解码器
+    decoder_inputs = model.input[1]  # decoder input
+    decoder_init_state = Input(shape=(2*conf.GRU_HIDDEN_SIZE,), name='initial_status')
+    encoder_states = Input(shape=(conf.FEATURE_MAP_WIDTH,conf.GRU_HIDDEN_SIZE*2,), name='encoder_states')
 
-    return train_model,None,None#infer_decoder_model,infer_encoder_model
+    decoder_gru = model.get_layer("decoder_gru")
+    decoder_outputs, decoder_state = decoder_gru(decoder_inputs, initial_state=decoder_init_state)
+
+    attention_layer = model.get_layer("attention_layer")
+    attention_outputs,attention_prob = attention_layer([encoder_states,decoder_outputs])
+
+    concat_outputs = Concatenate(axis=-1, name='concat_layer')([decoder_outputs, attention_outputs])
+
+    decoder_dense = model.get_layer("time_distributed_layer")
+    decoder_outputs = decoder_dense(concat_outputs)
+
+    decoder_model = Model(
+        [decoder_inputs,encoder_states,decoder_init_state],
+        [decoder_outputs,attention_prob,decoder_state])
+    return encoder_model,decoder_model

@@ -6,4 +6,10 @@ fi
 
 echo "开始预测"
 
-python -m main.pred $1 $2
+MODEL=model/model-20200424174211-epoch205-acc0.4595-val0.8286.hdf5
+if [ "$2" != "" ]; then
+  echo "使用提供的模型：$2"
+  $MODEL=$2
+fi
+
+python -m main.pred --image $1 --model $MODEL

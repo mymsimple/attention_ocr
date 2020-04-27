@@ -14,7 +14,7 @@ CHARSET = "data/charset.txt" # 3770的一级字库
 INPUT_IMAGE_HEIGHT = 32  # 图像归一化的高度
 INPUT_IMAGE_WIDTH = 256  # 最大的图像宽度
 GRU_HIDDEN_SIZE = 256    # GRU隐含层神经元数量
-FEATURE_MAP_REDUCE = 8   # 相比原始图片，feature map缩小几倍（送入bi-gru的解码器之前的feature map），目前是8，因为用的resnet50，缩小8倍
+FEATURE_MAP_WIDTH = INPUT_IMAGE_WIDTH//32   # 相比原始图片，feature map缩小几倍（送入bi-gru的解码器之前的feature map），目前是8，因为用的resnet50，缩小32倍,256=>8
 
 DIR_LOGS="logs"
 DIR_TBOARD="logs/tboard"

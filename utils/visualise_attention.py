@@ -90,7 +90,7 @@ class TBoardVisual(Callback):
             for w_distribute in words_distribute:
                 # 找到64个encoder序列中，哪个位置概率最大
                 max_index = np.argmax(w_distribute)
-                x = max_index*conf.FEATURE_MAP_REDUCE
+                x = max_index * conf.FEATURE_MAP_WIDTH
                 y = conf.INPUT_IMAGE_HEIGHT//2
                 logger.debug("注意力位置(%d,%d)",x,y)
                 cv2.circle(raw_image,(x,y),1, (0, 0, 255),1)

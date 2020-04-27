@@ -22,7 +22,7 @@ def train(args):
     charset = label_utils.get_charset(conf.CHARSET)
     conf.CHARSET_SIZE = len(charset)
 
-    model, _, _ = _model.model(conf, args)
+    model= _model.train_model(conf, args)
 
     train_sequence = SequenceData(name="训练",
                                   label_file=args.train_label_file,
@@ -49,9 +49,7 @@ def train(args):
         _checkpoint_path = util.get_checkpoint(conf.DIR_CHECKPOINT)
         if _checkpoint_path is not None:
             model = load_model(_checkpoint_path,
-                custom_objects={
-                    'words_accuracy': _model.words_accuracy,
-                    'AttentionLayer':AttentionLayer})
+                custom_objects={'words_accuracy': _model.words_accuracy})
             logger.info("加载checkpoint模型[%s]", _checkpoint_path)
         else:
             logger.warning("找不到任何checkpoint，重新开始训练")
