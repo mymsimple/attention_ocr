@@ -1,15 +1,19 @@
 # 注意力模型识别OCR
 
-这个是基于[@thushv89](https://github.com/thushv89/attention_keras)的注意力模型的基础上，添加了OCR的功能，为了表示尊敬，直接fork了他。
+这个项目实现了基于注意力的OCR模型，主要参考的是论文[ASTER](https://www.researchgate.net/publication/325993414_ASTER_An_Attentional_Scene_Text_Recognizer_with_Flexible_Rectification)中的文字识别TRN网络。
 
-他对attention的实现的博客在[这里](https://towardsdatascience.com/light-on-math-ml-attention-with-keras-dc8dbc1fad39)。
+![](./images/sre.png)
 
-但是，实际上我在他的基础上要添加OCR识别，参考的论文是
-《Robust Scene Text Recognition with Automatic Rectification（RARE）》中的SRE网络。
+# 实现版本
 
-![](./layers/images/sre.png)
+一共我实现了3个版本：
 
-# 算法实现思路
+- master分支
+  这个是最终收敛的，使用了resnet50作为卷积特征抽取，然后是双向bi-gru做编码器，最后是一个gru的解码器，使用的是lusong的注意力模型。
+
+- [Luong分支]https://github.com/piginzoo/attention_ocr/tree/b_luong_attention  
+
+# 实现
 
 ## 1.输入图像的特征化
 本来打算直接用个vgg之类的backbone当做特征抽取的过程，即抽取后，reshape成所需要的序列输入的样子，比如7x7x512=>7x3584，结果后来了问题，虽然不用非要按照他的输入为224x224，而是就是直接resize成32高，恩，是的，高还是要统一的，然后输出的高度应该是Bx1xNx512，但是，N一般会很小，因为VGG都是宽高都缩成1/32，这个就不好办了，比如一个32x100的图片，缩成了1x3个feature map。3个，我怎么也不能搞出来5个字啊。你序列可以长点，但是你不能比要预测的还少啊。所以，只好放弃vgg了。
@@ -33,6 +37,19 @@
 ## 5. 最后的输出
 
 最后呢，是把attention输出的内容和解码器GRU的输出，concat一起，扔给一个TimeDistributed，其实就是一个共享的全连接，输出一个3770（词表）大小的分类就完事了。
+
+
+注意力，我尝试了两种：
+
+# 注意力的实现
+
+## Luong注意力
+这个是基于[@thushv89](https://github.com/thushv89/attention_keras)的注意力模型的基础上，添加了OCR的功能，为了表示尊敬，直接fork了他。
+
+他对attention的实现的博客在[这里](https://towardsdatascience.com/light-on-math-ml-attention-with-keras-dc8dbc1fad39)。
+
+
+
 
 # 设计中的纠结和问题
 

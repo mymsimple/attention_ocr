@@ -106,10 +106,11 @@ def read_data_file_bucket(label_file_name, process_num):
     # print(data_list)
     logger.debug("所有数据[%d]条，被分箱到[%d]中",len(data),process_num)
 
+
     return data_list
 
 def process_lines(charsets,data):
-    result = []
+    result =
     for d in data:
         # print(d)
         file, label = d
