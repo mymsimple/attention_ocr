@@ -1,4 +1,5 @@
 # 注意力模型识别OCR
+...
 
 这个是基于[@thushv89](https://github.com/thushv89/attention_keras)的注意力模型的基础上，添加了OCR的功能，为了表示尊敬，直接fork了他。
 
