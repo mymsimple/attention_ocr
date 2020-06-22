@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*
 from tensorflow.python.keras.layers import Bidirectional,Input, GRU, Dense, Concatenate, TimeDistributed
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
@@ -30,7 +31,7 @@ def words_accuracy(y_true, y_pred):
     max_idx_l = _p(max_idx_l, "@@@,标签值")
     correct_pred = tf.equal(max_idx_p, max_idx_l)
     correct_pred = _p(correct_pred, "@@@,words_accuracy(字对字)")
-    _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)
+    _result = tf.map_fn(fn=lambda e: tf.reduce_all(e), elems=correct_pred, dtype=tf.bool)   # e????每个输入？
     _result = _p(_result, "@@@,words_accuracy(词对词)")
     result = tf.reduce_mean(tf.cast(_result, tf.float32))
     result = _p(result, "@@@,words_accuracy正确率")
