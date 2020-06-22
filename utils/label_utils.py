@@ -26,7 +26,7 @@ def prob2str(pred,charset):
 def ids2str(results,characters):
     values = []
     for r in results: # 每个句子
-        values.append(id2str(r))
+        values.append(id2str(r,characters))
     return values
 
 # id[1,3,56,4,35...] => xyzqf...
@@ -105,6 +105,7 @@ def read_data_file_bucket(label_file_name, process_num):
     data_list = list(chunks(data, len(data) // process_num ))
     # print(data_list)
     logger.debug("所有数据[%d]条，被分箱到[%d]中",len(data),process_num)
+
 
     return data_list
 
