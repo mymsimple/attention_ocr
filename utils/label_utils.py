@@ -111,7 +111,6 @@ def read_data_file_bucket(label_file_name, process_num):
 def process_lines(charsets,data):
     result = []
     for d in data:
-        # print(d)
         file, label = d
         filename, labels_index = process_line(file, label, charsets)
         if filename is None: continue
