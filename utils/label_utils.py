@@ -110,6 +110,7 @@ def read_data_file_bucket(label_file_name, process_num):
 
 def process_lines(charsets,data):
     result = []
+    # print(d)
     for d in data:
         file, label = d
         filename, labels_index = process_line(file, label, charsets)
